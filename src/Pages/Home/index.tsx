@@ -118,7 +118,7 @@ const Home: FC = () => {
       from: address
     });
     let gasPrice = await relWeb3.eth.getGasPrice(); //获取当前gas价格
-    //approve参数: 1.第0个币种,2.金额
+    //deposit参数: 1.第0个币种,2.金额
     Contract.methods.deposit(0, new BigNumber(amount).multipliedBy(Math.pow(10, 18)).toFixed()).send({ from: address, gasPrice: gasPrice, gas: relWeb3.utils.toHex(900000) }, (err: any, result: any) => {
       if (err) {
         message.error(err.message)
@@ -146,7 +146,7 @@ const Home: FC = () => {
       from: address
     });
     let gasPrice = await relWeb3.eth.getGasPrice(); //获取当前gas价格
-    //approve参数: 1.第0个币种,2.金额
+    //withdraw参数: 1.第0个币种,2.金额
     Contract.methods.withdraw(0, new BigNumber(withdrawAmount).multipliedBy(Math.pow(10, 18)).toFixed()).send({ from: address, gasPrice: gasPrice, gas: relWeb3.utils.toHex(900000) }, (err: any, result: any) => {
       if (err) {
         message.error(err.message)
@@ -237,7 +237,7 @@ const Home: FC = () => {
       from: address
     });
     let gasPrice = await relWeb3.eth.getGasPrice(); //获取当前gas价格
-    //approve参数: 1.第0个币种,2.金额
+    //borrow参数: 1.第0个币种,2.金额
     Contract.methods.borrow(0, new BigNumber(borrowAmount).multipliedBy(Math.pow(10, 18)).toFixed(), cycle).send({ from: address, gasPrice: gasPrice, gas: relWeb3.utils.toHex(900000) }, (err: any, result: any) => {
       if (err) {
         message.error(err.message)
