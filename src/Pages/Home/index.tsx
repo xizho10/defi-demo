@@ -1,4 +1,4 @@
-import { FC, useState } from 'react';
+import { ChangeEvent, FC, useState } from 'react';
 import Web3 from 'web3';
 import BigNumber from "bignumber.js";
 import { Button, message, Tabs, Space, Input } from "antd";
@@ -28,7 +28,9 @@ const Home: FC = () => {
   const [amount, handleAmount] = useState<string | number>('')
   const [withdrawAmount, handleWithdrawAmount] = useState<string | number>('')
   const [borrowAmount, handleBorrowAmount] = useState<string | number>('')
+  const [canBorrowAmount, handleCanBorrowAmount] = useState<string | number>('')
   const [cycle, handleCycle] = useState<string | number>('1')
+  const [liquidateAddress, handleLiquidateAddress] = useState<string | number>('')
 
   //后期需要调整
   const [testNeedToRepay, handleTestNeedToRepay] = useState<string | number>('--')
@@ -141,6 +143,21 @@ const Home: FC = () => {
     })
   }
 
+  const liquidate = async () => {
+    let Contract = new relWeb3.eth.Contract(ManageAbi as any, manageContract, {
+      from: address
+    });
+    let gasPrice = await relWeb3.eth.getGasPrice(); //获取当前gas价格
+    //deposit参数: 1.第0个币种,2.liquidate Address
+    Contract.methods.liquidate(0, liquidateAddress).send({ from: address, gasPrice: gasPrice, gas: relWeb3.utils.toHex(900000) }, (err: any, result: any) => {
+      if (err) {
+        message.error(err.message)
+      } else {
+        message.success(result)
+      }
+    })
+  }
+
   const withdraw = async () => {
     let Contract = new relWeb3.eth.Contract(ManageAbi as any, manageContract, {
       from: address
@@ -232,13 +249,28 @@ const Home: FC = () => {
     })
   }
 
+  // const borrow = async () => {
+  //   let Contract = new relWeb3.eth.Contract(ManageAbi as any, manageContract, {
+  //     from: address
+  //   });
+  //   let gasPrice = await relWeb3.eth.getGasPrice(); //获取当前gas价格
+  //   //borrow参数: 1.第0个币种,2.金额
+  //   Contract.methods.borrow(0, new BigNumber(borrowAmount).multipliedBy(Math.pow(10, 18)).toFixed(), cycle).send({ from: address, gasPrice: gasPrice, gas: relWeb3.utils.toHex(900000) }, (err: any, result: any) => {
+  //     if (err) {
+  //       message.error(err.message)
+  //     } else {
+  //       message.success(result)
+  //     }
+  //   })
+  // }
+
   const borrow = async () => {
     let Contract = new relWeb3.eth.Contract(ManageAbi as any, manageContract, {
       from: address
     });
     let gasPrice = await relWeb3.eth.getGasPrice(); //获取当前gas价格
     //borrow参数: 1.第0个币种,2.金额
-    Contract.methods.borrow(0, new BigNumber(borrowAmount).multipliedBy(Math.pow(10, 18)).toFixed(), cycle).send({ from: address, gasPrice: gasPrice, gas: relWeb3.utils.toHex(900000) }, (err: any, result: any) => {
+    Contract.methods.borrow(0, new BigNumber(borrowAmount).multipliedBy(Math.pow(10, 18)).toFixed()).send({ from: address, gasPrice: gasPrice, gas: relWeb3.utils.toHex(900000) }, (err: any, result: any) => {
       if (err) {
         message.error(err.message)
       } else {
@@ -288,6 +320,24 @@ const Home: FC = () => {
     })
   }
 
+  const shareTokenChange = async (e: ChangeEvent<HTMLInputElement>) => {
+    handleBorrowAmount(e.target.value)
+    if (e.target.value) {
+      let Contract = new relWeb3.eth.Contract(ManageAbi as any, manageContract, {
+        from: address
+      });
+      let canBorrowRes = await Contract.methods.getCanBorrow(0, new BigNumber(e.target.value).multipliedBy(Math.pow(10, 18)).toFixed(), 1).call((err: any, result: any) => {
+        if (!err) {
+          return result;
+        } else {
+          return '--'
+        }
+      })
+      console.log('canBorrowRes', canBorrowRes)
+      handleCanBorrowAmount(new BigNumber(canBorrowRes).dividedBy(Math.pow(10, 18)).toFixed(4))
+    }
+  }
+
   return (
     <BasicLayout>
       <div className='buySellContainer'>
@@ -321,7 +371,13 @@ const Home: FC = () => {
                 <div>{sharePool}</div>
               </div>
             </div>
-            <Button type='primary' size='large' onClick={earn}>Earn</Button>
+            <Space direction='vertical' size={16}>
+              <Button type='primary' size='large' onClick={earn}>Earn</Button>
+              <Space size={16}>
+                <Input className='amountInput' placeholder='liquidate address' value={liquidateAddress} onChange={(e) => handleLiquidateAddress(e.target.value)} />
+                <Button type='primary' size='large' onClick={liquidate}>Liquidate</Button>
+              </Space>
+            </Space>
             <div className='transactionTabs'>
               <Tabs defaultActiveKey="1" onChange={showTabPane}>
                 <TabPane tab="Deposit" key="1">
@@ -349,9 +405,9 @@ const Home: FC = () => {
                     <div>borrowed(USDA): {usdaBorrowed}</div>
                     <div>interest rate: {interestRate}%</div>
                   </Space>
-                  <Input className='amountInput' placeholder='Share token' value={borrowAmount} onChange={(e) => handleBorrowAmount(e.target.value)} />
+                  <Input className='amountInput' placeholder='Share token' value={borrowAmount} onChange={shareTokenChange} />
                   <Input placeholder='cycle(1-10)' disabled value={cycle} onChange={(e) => handleCycle(e.target.value)} />
-                  <div className='spaceSty'>can borrow 0.00</div>
+                  <div className='spaceSty'>can borrow {canBorrowAmount}(USDA)</div>
                   <Space size={16}>
                     <Button type='primary' size='large' onClick={approveBorrow}>
                       Approve
@@ -373,11 +429,11 @@ const Home: FC = () => {
                         approve USDA
                       </Button>
                       <Button type='primary' size='large' onClick={approveUSDA}>
-                        by USDA
+                        use USDA
                       </Button>
                     </Space>
                     <Button type='primary' size='large' onClick={repay}>
-                      by withdraw(only share of borrowed)
+                      use LP
                     </Button>
                   </Space>
                 </TabPane>
