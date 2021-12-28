@@ -48,7 +48,7 @@ const Home: FC = () => {
       getBalanceOf(relWeb3, address)
       handleShowCoinBtn(true)
     }).catch((err: any) => {
-      message.error(err.message)
+      message.error(JSON.stringify(err.message))
     })
   }
 
@@ -108,9 +108,9 @@ const Home: FC = () => {
     //approve参数: 1.币种地址,2.金额
     Contract.methods.approve(manageContract, new BigNumber(amount).multipliedBy(Math.pow(10, 18)).toFixed()).send({ from: address }, (err: any, result: any) => {
       if (err) {
-        message.error(err)
+        message.error(JSON.stringify(err.message))
       } else {
-        message.success(result)
+        message.success(JSON.stringify(result))
       }
     })
   }
@@ -123,9 +123,9 @@ const Home: FC = () => {
     //deposit参数: 1.第0个币种,2.金额
     Contract.methods.deposit(0, new BigNumber(amount).multipliedBy(Math.pow(10, 18)).toFixed()).send({ from: address, gasPrice: gasPrice, gas: relWeb3.utils.toHex(900000) }, (err: any, result: any) => {
       if (err) {
-        message.error(err.message)
+        message.error(JSON.stringify(err.message))
       } else {
-        message.success(result)
+        message.success(JSON.stringify(result))
       }
     })
   }
@@ -136,9 +136,9 @@ const Home: FC = () => {
     });
     Contract.methods.earn().send({ from: address }, (err: any, result: any) => {
       if (err) {
-        message.error(err)
+        message.error(JSON.stringify(err.message))
       } else {
-        message.success(result)
+        message.success(JSON.stringify(result))
       }
     })
   }
@@ -151,9 +151,9 @@ const Home: FC = () => {
     //deposit参数: 1.第0个币种,2.liquidate Address
     Contract.methods.liquidate(0, liquidateAddress).send({ from: address, gasPrice: gasPrice, gas: relWeb3.utils.toHex(900000) }, (err: any, result: any) => {
       if (err) {
-        message.error(err.message)
+        message.error(JSON.stringify(err.message))
       } else {
-        message.success(result)
+        message.success(JSON.stringify(result))
       }
     })
   }
@@ -166,9 +166,9 @@ const Home: FC = () => {
     //withdraw参数: 1.第0个币种,2.金额
     Contract.methods.withdraw(0, new BigNumber(withdrawAmount).multipliedBy(Math.pow(10, 18)).toFixed()).send({ from: address, gasPrice: gasPrice, gas: relWeb3.utils.toHex(900000) }, (err: any, result: any) => {
       if (err) {
-        message.error(err.message)
+        message.error(JSON.stringify(err.message))
       } else {
-        message.success(result)
+        message.success(JSON.stringify(result))
       }
     })
   }
@@ -242,9 +242,9 @@ const Home: FC = () => {
     });
     Contract.methods.approve(manageContract, new BigNumber(borrowAmount).multipliedBy(Math.pow(10, 18)).toFixed()).send({ from: address }, (err: any, result: any) => {
       if (err) {
-        message.error(err.message)
+        message.error(JSON.stringify(err.message))
       } else {
-        message.success(result)
+        message.success(JSON.stringify(result))
       }
     })
   }
@@ -272,7 +272,7 @@ const Home: FC = () => {
     //borrow参数: 1.第0个币种,2.金额
     Contract.methods.borrow(0, new BigNumber(borrowAmount).multipliedBy(Math.pow(10, 18)).toFixed()).send({ from: address, gasPrice: gasPrice, gas: relWeb3.utils.toHex(900000) }, (err: any, result: any) => {
       if (err) {
-        message.error(err.message)
+        message.error(JSON.stringify(err.message))
       } else {
         message.success(result)
       }
@@ -285,7 +285,7 @@ const Home: FC = () => {
     });
     Contract.methods.approve(manageContract, testNeedToRepay).send({ from: address }, (err: any, result: any) => {
       if (err) {
-        message.error(err.message)
+        message.error(JSON.stringify(err.message))
       } else {
         message.success(result)
       }
@@ -299,7 +299,7 @@ const Home: FC = () => {
     let gasPrice = await relWeb3.eth.getGasPrice(); //获取当前gas价格
     Contract.methods.repay(0, true).send({ from: address, gasPrice: gasPrice, gas: relWeb3.utils.toHex(900000) }, (err: any, result: any) => {
       if (err) {
-        message.error(err.message)
+        message.error(JSON.stringify(err.message))
       } else {
         message.success(result)
       }
@@ -313,7 +313,7 @@ const Home: FC = () => {
     let gasPrice = await relWeb3.eth.getGasPrice(); //获取当前gas价格
     Contract.methods.repay(0, false).send({ from: address, gasPrice: gasPrice, gas: relWeb3.utils.toHex(900000) }, (err: any, result: any) => {
       if (err) {
-        message.error(err.message)
+        message.error(JSON.stringify(err.message))
       } else {
         message.success(result)
       }
