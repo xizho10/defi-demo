@@ -149,16 +149,8 @@ import {
   pscContract,
   usdaContract,
 } from "@/utils/config";
-// import { Options, Vue } from "vue-class-component";
-// import HelloWorld from "@/components/HelloWorld.vue"; // @ is an alias to /src
-
-// @Options({
-//   components: {
-//     HelloWorld,
-//   },
-// })
-// export default class Home extends Vue {}
 const address = ref<string>("");
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const relWeb3 = ref<any>("");
 const showCoinBtn = ref<boolean>(false);
 const showFun = ref<boolean>(false);

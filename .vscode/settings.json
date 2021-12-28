@@ -1,0 +1,15 @@
+{
+  "explorer.confirmDelete": false,
+  //支持编程字体
+  "editor.fontLigatures": true,
+  //为了符合eslint的两个空格间隔原则
+  "editor.tabSize": 2,
+  //关闭自动文件自动存储
+  "files.autoSave": "off",
+  // 保存后自动修复格式
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": true
+  },
+  //使用eslint规则重新格式化代码
+  "eslint.validate": ["javascript", "vue", "html", "vue"]
+}
