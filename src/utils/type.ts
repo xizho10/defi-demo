@@ -8,10 +8,10 @@ export interface getStatusProps {
 
 export interface loginProps {
   [key: string]: any;
-  address: string,
-  invitation_code_ref: string,
-  lang: number,
-  signature: string,
+  address: string;
+  invitation_code_ref: string;
+  lang: number;
+  signature: string;
 }
 
 export interface axiosResult {
