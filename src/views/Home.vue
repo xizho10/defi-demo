@@ -142,12 +142,15 @@ import BigNumber from "bignumber.js";
 import Erc20Abi from "@/utils/erc20.abi.json";
 import ManageAbi from "@/utils/manageAbi.abi.json";
 import Psc from "@/utils/psc.abi.json";
+import InfoAbi from "@/utils/info.abi.json";
+import LpAbi from "@/utils/lp.abi.json";
 import {
   lpContract,
   manageContract,
   shareContract,
   pscContract,
   usdaContract,
+  infoContract,
 } from "@/utils/config";
 const address = ref<string>("");
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -210,7 +213,7 @@ const getBalanceOf = async (relWeb3: Web3, address: string) => {
   balance.value = Balance;
 
   //获取 deposit balance
-  let MagContract = new relWeb3.eth.Contract(ManageAbi as any, manageContract);
+  let MagContract = new relWeb3.eth.Contract(InfoAbi as any, infoContract);
   let resDepositBalance = await MagContract.methods
     .getStakedTokens(0, address)
     .call((err: any, result: any) => {
@@ -403,16 +406,15 @@ const showTabPane = async (item: any) => {
       .dividedBy(Math.pow(10, 18))
       .toFixed(4);
 
-    //获取borrowed
-    let borrowedContract = new relWeb3.value.eth.Contract(
-      ManageAbi as any,
-      manageContract,
+    let InfoContract = new relWeb3.value.eth.Contract(
+      InfoAbi as any,
+      infoContract,
       {
         from: address.value,
       }
     );
-    let borrowedArr = await borrowedContract.methods
-      .userInfos(0, address.value)
+    let borrowedArr = await InfoContract.methods
+      .getUser(0, address.value)
       .call((err: any, result: any) => {
         if (!err) {
           return result;
@@ -425,8 +427,8 @@ const showTabPane = async (item: any) => {
       .toFixed(4);
 
     //获取interest rate
-    let interestRateArr = await borrowedContract.methods
-      .poolInfos(0)
+    let interestRateArr = await InfoContract.methods
+      .getPool(0)
       .call((err: any, result: any) => {
         if (!err) {
           return result;
@@ -439,16 +441,15 @@ const showTabPane = async (item: any) => {
       .toFixed(2);
   }
   if (item === "4") {
-    //获取share token(collateral)
-    let borrowedContract = new relWeb3.value.eth.Contract(
-      ManageAbi as any,
-      manageContract,
+    let InfoContract = new relWeb3.value.eth.Contract(
+      InfoAbi as any,
+      infoContract,
       {
         from: address.value,
       }
     );
-    let borrowedArr = await borrowedContract.methods
-      .userInfos(0, address.value)
+    let borrowedArr = await InfoContract.methods
+      .getUser(0, address.value)
       .call((err: any, result: any) => {
         if (!err) {
           return result;
@@ -461,8 +462,8 @@ const showTabPane = async (item: any) => {
       .toFixed(4);
 
     //test利率(后期调整)
-    let interestRateArr = await borrowedContract.methods
-      .poolInfos(0)
+    let interestRateArr = await InfoContract.methods
+      .getPool(0)
       .call((err: any, result: any) => {
         if (!err) {
           return result;
