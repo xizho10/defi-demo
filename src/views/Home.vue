@@ -181,7 +181,7 @@
                     }}%
                   </div>
                 </template>
-                <template v-if="column.keys === 'liquidityBalance'">
+                <template v-if="column.keys === 'liquidityOperation'">
                   <Space :size="10">
                     <Button
                       type="primary"
@@ -318,6 +318,10 @@
               </template>
             </Table>
           </TabPane>
+          <TabPane tab="Settings" key="3">
+            <p>receiver: {{ configParams?.receiver }}</p>
+            <p>rule: {{ configParams?.rule }}</p>
+          </TabPane>
         </Tabs>
       </div>
     </div>
@@ -433,6 +437,7 @@ import BNBTokenAbi from "@/utils/BNBToken_metadata.abi.json";
 import DAITokenAbi from "@/utils/DaiToken_metadata.abi.json";
 import BUSDTokenAbi from "@/utils/BUSDToken_metadata.abi.json";
 import PoolConfigurationAbi from "@/utils/PoolConfiguration_metadata.abi.json";
+import AlphaReleaseRuleSelectorAbi from "@/utils/AlphaReleaseRuleSelector_metadata.json";
 
 import {
   lpContract,
@@ -445,6 +450,7 @@ import {
   bnbContract,
   daiContract,
   busdContract,
+  alphaReleaseRuleSelectorContract,
 } from "@/utils/config";
 const columns = [
   {
@@ -467,7 +473,7 @@ const columns = [
   },
   {
     title: "LiquidityOperation",
-    keys: "LiquidityOperation",
+    keys: "liquidityOperation",
     dataIndex: "LiquidityOperation",
   },
   {
@@ -560,6 +566,9 @@ const LendWithdrawAmount = ref<string | number>("");
 const RepayVisible = ref<boolean>(false);
 const RepayModalTitle = ref<string | number>("withdraw");
 const LendRepayAmount = ref<string | number>("");
+
+//Config
+const configParams = ref<any>({});
 
 //后期需要调整
 const testNeedToRepay = ref<string | number>("");
@@ -737,16 +746,41 @@ const farmOrLendOnChange = async (children: any) => {
       item.liquidationBonusPercent = liquidationBonusPercent;
     }
   }
+  if (children === "3") {
+    console.log(123);
+    let Contract = new relWeb3.value.eth.Contract(
+      AlphaReleaseRuleSelectorAbi as any,
+      alphaReleaseRuleSelectorContract
+    );
+    let res = await Contract.methods
+      .getreceiverRuleListLength()
+      .call((err: any, result: any) => {
+        if (!err) {
+          return result;
+        } else {
+          return "--";
+        }
+      });
+    let addressArr = await Contract.methods
+      .receiverRuleList(res - 1)
+      .call((err: any, result: any) => {
+        if (!err) {
+          return result;
+        } else {
+          return "--";
+        }
+      });
+    configParams.value = addressArr;
+  }
 };
 
 const clickSwitch = async (item: any) => {
-  console.log("item", item.contract, item.userUsePoolAsCollateral);
   let lendingPoolContract = new relWeb3.value.eth.Contract(
     LendingPoolAbi as any,
     leadingpoolContract
   );
   let gasPrice = await relWeb3.value.eth.getGasPrice(); //获取当前gas价格
-  let res = await lendingPoolContract.methods
+  await lendingPoolContract.methods
     .setUserUseAsCollateral(item.contract, !item.userUsePoolAsCollateral)
     .send(
       {
@@ -764,7 +798,7 @@ const clickSwitch = async (item: any) => {
       }
     );
   //重新请求该列UserUsePoolAsCollateral状态,demo直接请求table所有数据(不推荐)
-  farmOrLendOnChange(2);
+  farmOrLendOnChange("2");
 };
 
 const openDepositModal = (item: any) => {
