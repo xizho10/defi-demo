@@ -11,7 +11,11 @@ const daiContract = "0x451ddD00e28A9631f24505033F1CC07dE89A0C3A";
 const busdContract = "0x31153B9A97DFaB4975053563A6EfD0D4c4cdAD99";
 const alphaReleaseRuleSelectorContract =
   "0x261917AA9Fccd664b3fAaC37082f2CDd2cbF6a1B";
+const oracleContract = "0xC0409716cF1bFbaffedf8Ab531Ef0AA5EcEba31a";
 
+//TODO: 暂定0.75，后面需要接口提供
+const collateralPercent = 0.75;
+const CLOSE_FACTOR = 0.05;
 export {
   lpContract,
   manageContract,
@@ -24,4 +28,7 @@ export {
   daiContract,
   busdContract,
   alphaReleaseRuleSelectorContract,
+  oracleContract,
+  collateralPercent,
+  CLOSE_FACTOR,
 };

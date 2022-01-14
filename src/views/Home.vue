@@ -84,7 +84,7 @@
                   </TabPane>
                   <TabPane tab="Borrow" key="3">
                     <Space :size="8" direction="vertical">
-                      <div>Share token: {{ shareToken }}</div>
+                      <div>share token: {{ shareToken }}</div>
                       <div>borrowed(USDA): {{ usdaBorrowed }}</div>
                       <div>interest rate: {{ interestRate }}%</div>
                     </Space>
@@ -199,7 +199,12 @@
                     </Button>
                   </Space>
                 </template>
-                <template v-if="column.keys === 'borrowOperation'">
+                <template
+                  v-if="
+                    column.keys === 'borrowOperation' &&
+                    record.userUsePoolAsCollateral
+                  "
+                >
                   <Space :size="10">
                     <Button
                       type="primary"
@@ -318,7 +323,10 @@
               </template>
             </Table>
           </TabPane>
-          <TabPane tab="Settings" key="3">
+          <TabPane tab="Liquidation" key="3">
+            <Liquidation :relWeb3="relWeb3" :address="address" />
+          </TabPane>
+          <TabPane tab="Settings" key="4">
             <p>receiver: {{ configParams?.receiver }}</p>
             <p>rule: {{ configParams?.rule }}</p>
           </TabPane>
@@ -366,6 +374,21 @@
       :value="LendBorrowAmount"
       @change="(e) => (LendBorrowAmount = e.target.value)"
     />
+    <div class="spaceSty" />
+    <p>Liquidity: {{ chooseItem.liquidityBalance }}</p>
+    <p>
+      Borrow Balance:
+      {{
+        new BigNumber(chooseItem.borrowBalance).multipliedBy(
+          new BigNumber(LendBorrowAmount).toFixed()
+        )
+      }}
+    </p>
+    <p>
+      Total Borrow Balance: 0 ~
+      {{ new BigNumber(BorrowBalance).multipliedBy(0.75).toFixed() }} $
+    </p>
+    <p>Borrow Limit Reached: 75%</p>
     <div class="spaceSty" />
     <Button type="primary" size="large" @click="lendBorrow"> borrow </Button>
   </Modal>
@@ -425,6 +448,7 @@ import {
   Switch,
 } from "ant-design-vue";
 import Web3 from "web3";
+import Liquidation from "@/views/components/Liquidation.vue";
 import BigNumber from "bignumber.js";
 import Erc20Abi from "@/utils/erc20.abi.json";
 import ManageAbi from "@/utils/manageAbi.abi.json";
@@ -438,6 +462,7 @@ import DAITokenAbi from "@/utils/DaiToken_metadata.abi.json";
 import BUSDTokenAbi from "@/utils/BUSDToken_metadata.abi.json";
 import PoolConfigurationAbi from "@/utils/PoolConfiguration_metadata.abi.json";
 import AlphaReleaseRuleSelectorAbi from "@/utils/AlphaReleaseRuleSelector_metadata.json";
+import MockPriceOracleAbi from "@/utils/MockPriceOracle_metadata.abi.json";
 
 import {
   lpContract,
@@ -451,6 +476,7 @@ import {
   daiContract,
   busdContract,
   alphaReleaseRuleSelectorContract,
+  oracleContract,
 } from "@/utils/config";
 const columns = [
   {
@@ -461,6 +487,16 @@ const columns = [
     title: "APR",
     keys: "APR",
     dataIndex: "APR",
+  },
+  {
+    title: "TotalLiquidity",
+    keys: "totalLiquidity",
+    dataIndex: "totalLiquidity",
+  },
+  {
+    title: "TotalAvailableLiquidity",
+    keys: "totalAvailableLiquidity",
+    dataIndex: "totalAvailableLiquidity",
   },
   {
     title: "WalletBalance",
@@ -487,7 +523,7 @@ const columns = [
     dataIndex: "userUsePoolAsCollateral",
   },
   {
-    title: "borrowOperation",
+    title: "BorrowOperation",
     keys: "borrowOperation",
     dataIndex: "borrowOperation",
   },
@@ -501,6 +537,8 @@ const Data = [
     borrowBalance: "0",
     walletBalance: "0",
     optimalUtilizationRate: "0",
+    totalLiquidity: "0",
+    totalAvailableLiquidity: "0",
     userUsePoolAsCollateral: false,
     contract: bnbContract, //BNB合约地址
     abi: BNBTokenAbi,
@@ -513,6 +551,8 @@ const Data = [
     borrowBalance: "0",
     walletBalance: "0",
     optimalUtilizationRate: "0",
+    totalLiquidity: "0",
+    totalAvailableLiquidity: "0",
     userUsePoolAsCollateral: false,
     contract: daiContract, //DAI合约地址
     abi: DAITokenAbi,
@@ -525,6 +565,8 @@ const Data = [
     borrowBalance: "0",
     walletBalance: "0",
     optimalUtilizationRate: "0",
+    totalLiquidity: "0",
+    totalAvailableLiquidity: "0",
     userUsePoolAsCollateral: false,
     contract: busdContract, //BUSD合约地址
     abi: BUSDTokenAbi,
@@ -554,7 +596,7 @@ const cycle = ref<string | number>("");
 const data = ref<any>(Data);
 const LendApproveAmount = ref<string | number>("");
 const LendDepositAmount = ref<string | number>("");
-const LendBorrowAmount = ref<string | number>("");
+const LendBorrowAmount = ref<string | number>("0");
 const depositVisible = ref<boolean>(false);
 const modalTitle = ref<string | number>("deposit");
 const borrowVisible = ref<boolean>(false);
@@ -566,6 +608,7 @@ const LendWithdrawAmount = ref<string | number>("");
 const RepayVisible = ref<boolean>(false);
 const RepayModalTitle = ref<string | number>("withdraw");
 const LendRepayAmount = ref<string | number>("");
+const BorrowBalance = ref<string | number>("0");
 
 //Config
 const configParams = ref<any>({});
@@ -616,6 +659,30 @@ const farmOrLendOnChange = async (children: any) => {
         .dividedBy(Math.pow(10, 18))
         .toFixed(4);
       item.userUsePoolAsCollateral = res.userUsePoolAsCollateral;
+      let totalLiquidity = await Contract.methods
+        .getTotalLiquidity(item.contract)
+        .call((err: any, result: any) => {
+          if (!err) {
+            return result;
+          } else {
+            return "--";
+          }
+        });
+      item.totalLiquidity = new BigNumber(totalLiquidity)
+        .dividedBy(Math.pow(10, 18))
+        .toFixed(4);
+      let totalAvailableLiquidity = await Contract.methods
+        .getTotalAvailableLiquidity(item.contract)
+        .call((err: any, result: any) => {
+          if (!err) {
+            return result;
+          } else {
+            return "--";
+          }
+        });
+      item.totalAvailableLiquidity = new BigNumber(totalAvailableLiquidity)
+        .dividedBy(Math.pow(10, 18))
+        .toFixed(4);
       let resGetPoolBalance = await Contract.methods
         .pools(item.contract)
         .call((err: any, result: any) => {
@@ -645,7 +712,7 @@ const farmOrLendOnChange = async (children: any) => {
         .toFixed(4);
       item.walletBalance = Balance;
       //获取APR和utilizationRate
-      let totalLiquidity = await Contract.methods
+      let aprTotalLiquidity = await Contract.methods
         .getTotalLiquidity(item.contract)
         .call((err: any, result: any) => {
           if (!err) {
@@ -659,7 +726,10 @@ const farmOrLendOnChange = async (children: any) => {
         resGetPoolBalance.poolConfig
       );
       let rate = await poolConfigContract.methods
-        .calculateInterestRate(resGetPoolBalance.totalBorrows, totalLiquidity)
+        .calculateInterestRate(
+          resGetPoolBalance.totalBorrows,
+          aprTotalLiquidity
+        )
         .call((err: any, result: any) => {
           if (!err) {
             return result;
@@ -668,7 +738,7 @@ const farmOrLendOnChange = async (children: any) => {
           }
         });
       let utilizationRate = await poolConfigContract.methods
-        .getUtilizationRate(resGetPoolBalance.totalBorrows, totalLiquidity)
+        .getUtilizationRate(resGetPoolBalance.totalBorrows, aprTotalLiquidity)
         .call((err: any, result: any) => {
           if (!err) {
             return result;
@@ -746,8 +816,7 @@ const farmOrLendOnChange = async (children: any) => {
       item.liquidationBonusPercent = liquidationBonusPercent;
     }
   }
-  if (children === "3") {
-    console.log(123);
+  if (children === "4") {
     let Contract = new relWeb3.value.eth.Contract(
       AlphaReleaseRuleSelectorAbi as any,
       alphaReleaseRuleSelectorContract
@@ -815,9 +884,43 @@ const depositModalHandleCancel = () => {
 };
 
 //打开borrrow弹框
-const openBorrowModal = (item: any) => {
+const openBorrowModal = async (item: any) => {
   chooseItem.value = item;
   borrowVisible.value = true;
+  let lendingPoolContract = new relWeb3.value.eth.Contract(
+    LendingPoolAbi as any,
+    leadingpoolContract
+  );
+  let balance = await lendingPoolContract.methods
+    .getUserAccount(address.value)
+    .call((err: any, result: any) => {
+      if (!err) {
+        return result;
+      } else {
+        return "--";
+      }
+    });
+  console.log("balance", balance);
+  let MockPriceOracleContract = new relWeb3.value.eth.Contract(
+    MockPriceOracleAbi as any,
+    oracleContract
+  );
+  let AssetPrice = await MockPriceOracleContract.methods
+    .getAssetPrice(item.contract)
+    .call((err: any, result: any) => {
+      if (!err) {
+        return result;
+      } else {
+        return "--";
+      }
+    });
+  console.log("AssetPrice", AssetPrice);
+  let borrowBalance = new BigNumber(balance.totalLiquidityBalanceBase)
+    .minus(new BigNumber(balance.totalBorrowBalanceBase).dividedBy(0.75))
+    .dividedBy(new BigNumber(AssetPrice))
+    .toFixed(4);
+  console.log("borrowBalance", borrowBalance);
+  BorrowBalance.value = borrowBalance;
 };
 
 const borrowerModalHandleOk = () => {
