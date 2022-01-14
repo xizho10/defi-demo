@@ -275,7 +275,7 @@ const refresh = async () => {
       leadingpoolContract
     );
     let balance = await lendingPoolContract.methods
-      .getUserAccount(props.address)
+      .getUserAccount(item.address)
       .call((err: any, result: any) => {
         if (!err) {
           return result;
