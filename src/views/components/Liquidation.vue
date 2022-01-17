@@ -154,42 +154,42 @@ const Data = [
     liquidityBalance: "0",
     rate: "0",
   },
-  // {
-  //   address: "0x416627dA2AD387EEDCe2835B9450471dcb1A1f45",
-  //   coin: "BNB",
-  //   contract: bnbContract,
-  //   abi: BNBTokenAbi,
-  //   cannotLiquidation: true,
-  //   liquidityBalance: "0",
-  //   rate: "0",
-  // },
-  // {
-  //   address: "0x416627dA2AD387EEDCe2835B9450471dcb1A1f45",
-  //   coin: "DAI",
-  //   contract: daiContract,
-  //   abi: DAITokenAbi,
-  //   cannotLiquidation: true,
-  //   liquidityBalance: "0",
-  //   rate: "0",
-  // },
-  // {
-  //   address: "0xA2e18718000077758fd90636D84A89f76DDA2BBd",
-  //   coin: "BNB",
-  //   contract: bnbContract,
-  //   abi: BNBTokenAbi,
-  //   cannotLiquidation: true,
-  //   liquidityBalance: "0",
-  //   rate: "0",
-  // },
-  // {
-  //   address: "0xA2e18718000077758fd90636D84A89f76DDA2BBd",
-  //   coin: "DAI",
-  //   contract: daiContract,
-  //   abi: DAITokenAbi,
-  //   cannotLiquidation: true,
-  //   liquidityBalance: "0",
-  //   rate: "0",
-  // },
+  {
+    address: "0x416627dA2AD387EEDCe2835B9450471dcb1A1f45",
+    coin: "BNB",
+    contract: bnbContract,
+    abi: BNBTokenAbi,
+    cannotLiquidation: true,
+    liquidityBalance: "0",
+    rate: "0",
+  },
+  {
+    address: "0x416627dA2AD387EEDCe2835B9450471dcb1A1f45",
+    coin: "DAI",
+    contract: daiContract,
+    abi: DAITokenAbi,
+    cannotLiquidation: true,
+    liquidityBalance: "0",
+    rate: "0",
+  },
+  {
+    address: "0xA2e18718000077758fd90636D84A89f76DDA2BBd",
+    coin: "BNB",
+    contract: bnbContract,
+    abi: BNBTokenAbi,
+    cannotLiquidation: true,
+    liquidityBalance: "0",
+    rate: "0",
+  },
+  {
+    address: "0xA2e18718000077758fd90636D84A89f76DDA2BBd",
+    coin: "DAI",
+    contract: daiContract,
+    abi: DAITokenAbi,
+    cannotLiquidation: true,
+    liquidityBalance: "0",
+    rate: "0",
+  },
 ];
 const data = ref<any>(Data);
 const liquidityVisible = ref<boolean>(false);
@@ -354,6 +354,7 @@ const Approve = async () => {
           new BigNumber(chooseItem.value.borrowBalance)
         )
       )
+        .multipliedBy(new BigNumber(1.0001))
         .multipliedBy(Math.pow(10, 18))
         .toFixed()
     )
