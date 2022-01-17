@@ -35,8 +35,8 @@
     <p>{{ chooseItem?.coin }} contract: {{ chooseItem?.contract }}</p>
     <div class="spaceSty" />
     <p>
-      liquidate:
-      <RadioGroup v-model:value="liquidateSharesValue">
+      liquidatePercent:
+      <RadioGroup v-model:value="liquidatePercent">
         <Radio value="0.1">10%</Radio>
         <Radio value="0.2">20%</Radio>
         <Radio value="0.3">30%</Radio>
@@ -48,7 +48,7 @@
     <p>liquidateShares: {{ liquidateSharesAmount }}</p>
     <p>
       liquidateAmount:{{
-        new BigNumber(liquidateSharesValue)
+        new BigNumber(liquidatePercent)
           .multipliedBy(new BigNumber(chooseItem.borrowBalance))
           .toFixed(4)
       }}
@@ -154,49 +154,49 @@ const Data = [
     liquidityBalance: "0",
     rate: "0",
   },
-  {
-    address: "0x416627dA2AD387EEDCe2835B9450471dcb1A1f45",
-    coin: "BNB",
-    contract: bnbContract,
-    abi: BNBTokenAbi,
-    cannotLiquidation: true,
-    liquidityBalance: "0",
-    rate: "0",
-  },
-  {
-    address: "0x416627dA2AD387EEDCe2835B9450471dcb1A1f45",
-    coin: "DAI",
-    contract: daiContract,
-    abi: DAITokenAbi,
-    cannotLiquidation: true,
-    liquidityBalance: "0",
-    rate: "0",
-  },
-  {
-    address: "0xA2e18718000077758fd90636D84A89f76DDA2BBd",
-    coin: "BNB",
-    contract: bnbContract,
-    abi: BNBTokenAbi,
-    cannotLiquidation: true,
-    liquidityBalance: "0",
-    rate: "0",
-  },
-  {
-    address: "0xA2e18718000077758fd90636D84A89f76DDA2BBd",
-    coin: "DAI",
-    contract: daiContract,
-    abi: DAITokenAbi,
-    cannotLiquidation: true,
-    liquidityBalance: "0",
-    rate: "0",
-  },
+  // {
+  //   address: "0x416627dA2AD387EEDCe2835B9450471dcb1A1f45",
+  //   coin: "BNB",
+  //   contract: bnbContract,
+  //   abi: BNBTokenAbi,
+  //   cannotLiquidation: true,
+  //   liquidityBalance: "0",
+  //   rate: "0",
+  // },
+  // {
+  //   address: "0x416627dA2AD387EEDCe2835B9450471dcb1A1f45",
+  //   coin: "DAI",
+  //   contract: daiContract,
+  //   abi: DAITokenAbi,
+  //   cannotLiquidation: true,
+  //   liquidityBalance: "0",
+  //   rate: "0",
+  // },
+  // {
+  //   address: "0xA2e18718000077758fd90636D84A89f76DDA2BBd",
+  //   coin: "BNB",
+  //   contract: bnbContract,
+  //   abi: BNBTokenAbi,
+  //   cannotLiquidation: true,
+  //   liquidityBalance: "0",
+  //   rate: "0",
+  // },
+  // {
+  //   address: "0xA2e18718000077758fd90636D84A89f76DDA2BBd",
+  //   coin: "DAI",
+  //   contract: daiContract,
+  //   abi: DAITokenAbi,
+  //   cannotLiquidation: true,
+  //   liquidityBalance: "0",
+  //   rate: "0",
+  // },
 ];
 const data = ref<any>(Data);
 const liquidityVisible = ref<boolean>(false);
 const chooseItem = ref<any>({});
 const canShareCoin = ref<string | number>("");
 const canShareContract = ref<string | number>("");
-const liquidateSharesValue = ref<string | number>("0.1");
+const liquidatePercent = ref<string | number>("0.1");
 const totalBorrowShares = ref<string | number>("");
 const totalBorrows = ref<string | number>("");
 const liquidateSharesAmount = ref<string | number>("");
@@ -274,7 +274,7 @@ const refresh = async () => {
       LendingPoolAbi as any,
       leadingpoolContract
     );
-    let balance = await lendingPoolContract.methods
+    let userAccount = await lendingPoolContract.methods
       .getUserAccount(item.address)
       .call((err: any, result: any) => {
         if (!err) {
@@ -283,15 +283,8 @@ const refresh = async () => {
           return "--";
         }
       });
-    // console.log("balance", balance);
-    let rate = new BigNumber(AssetPrice)
-      .multipliedBy(item.borrowBalance)
-      .dividedBy(
-        new BigNumber(balance.totalLiquidityBalanceBase).multipliedBy(
-          collateralPercent
-        )
-      )
-      .toFixed(4);
+    let rate = new BigNumber(userAccount.totalBorrowBalanceBase).dividedBy(new BigNumber(userAccount.totalCollateralBalanceBase)).toFixed(4);
+    console.log("userAccount", userAccount);
     // console.log("rate", rate, balance.totalLiquidityBalanceBase);
     item.rate = rate;
   }
@@ -308,38 +301,50 @@ const liquidityModalHandleCancel = () => {
 const liquidate = async (item: any) => {
   liquidityVisible.value = true;
   chooseItem.value = item;
-  data.value.map((children: any) => {
+  data.value.map(async (children: any) => {
     if (
       children.address === item.address &&
       Number(children.liquidityBalance) > 0
-    ) {
+    ) { // 只有借的金额>0的pool才可以用做清算的参数liquidateShares
       canShareCoin.value = children.coin;
       canShareContract.value = children.contract;
+      console.log(children);
+
     }
+
+    let lendingPoolContract = new props.relWeb3.eth.Contract(
+        LendingPoolAbi as any,
+        leadingpoolContract
+    );
+    let pool = await lendingPoolContract.methods
+        .getPool(item.contract)
+        .call((err: any, result: any) => {
+          if (!err) {
+            return result;
+          } else {
+            return "--";
+          }
+        });
+
+    totalBorrowShares.value = pool.totalBorrowShares;
+    totalBorrows.value = pool.totalBorrows;
+    // liquidateAmount = _shareAmount.mul(pool.totalBorrows).divCeil(pool.totalBorrowShares)
+    // _shareAmount = liquidateAmount / totalBorrows * totalBorrowShares
+    let liquidateAmount = new BigNumber(liquidatePercent.value)
+        .multipliedBy(new BigNumber(chooseItem.value.borrowBalance));
+
+
+    liquidateSharesAmount.value = liquidateAmount.multipliedBy(
+            new BigNumber(pool.totalBorrowShares).dividedBy(
+                new BigNumber(pool.totalBorrows)
+            )
+        )
+        .toFixed(4);
+
+
   });
-  let lendingPoolContract = new props.relWeb3.eth.Contract(
-    LendingPoolAbi as any,
-    leadingpoolContract
-  );
-  let pool = await lendingPoolContract.methods
-    .getPool(item.contract)
-    .call((err: any, result: any) => {
-      if (!err) {
-        return result;
-      } else {
-        return "--";
-      }
-    });
-  totalBorrowShares.value = pool.totalBorrowShares;
-  totalBorrows.value = pool.totalBorrows;
-  liquidateSharesAmount.value = new BigNumber(liquidateSharesValue.value)
-    .multipliedBy(new BigNumber(chooseItem.value.borrowBalance))
-    .multipliedBy(
-      new BigNumber(pool.totalBorrowShares).dividedBy(
-        new BigNumber(pool.totalBorrows)
-      )
-    )
-    .toFixed(4);
+
+
 };
 const Approve = async () => {
   let approveContract = new props.relWeb3.eth.Contract(
@@ -348,11 +353,11 @@ const Approve = async () => {
   );
   approveContract.methods
     .approve(
-      chooseItem.value.contract,
+        leadingpoolContract,
       new BigNumber(
-        new BigNumber(liquidateSharesValue.value)
+        new BigNumber(liquidatePercent.value)
           .multipliedBy(new BigNumber(chooseItem.value.borrowBalance))
-          .plus(1)
+          // .plus(1)
       )
         .multipliedBy(Math.pow(10, 18))
         .toFixed()
@@ -370,14 +375,23 @@ const LiquidateConfirm = async () => {
     LendingPoolAbi as any,
     leadingpoolContract
   );
+  //.plus(new BigNumber(10))
+  console.log(chooseItem.value.address);
+  console.log(chooseItem.value.contract);
+  console.log("liquidateSharesAmount###",new BigNumber(liquidateSharesAmount.value).dividedBy(new BigNumber(1)).multipliedBy(Math.pow(10, 18)).toFixed());
+  console.log(canShareContract.value)
+  let gasPrice = await props.relWeb3.eth.getGasPrice();
   lendingPoolContract.methods
     .liquidate(
       chooseItem.value.address,
       chooseItem.value.contract,
-      new BigNumber(liquidateSharesAmount.value).multipliedBy(Math.pow(10, 18)),
+      new BigNumber(liquidateSharesAmount.value).dividedBy(new BigNumber(1)).multipliedBy(Math.pow(10, 18)),
       canShareContract.value
     )
-    .send({ from: props.address }, (err: any, result: any) => {
+    .send({ from: props.address,
+      gasPrice: gasPrice,
+      gas: props.relWeb3.utils.toHex(902487),
+    }, (err: any, result: any) => {
       if (err) {
         message.error(JSON.stringify(err.message));
       } else {
