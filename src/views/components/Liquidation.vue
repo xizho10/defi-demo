@@ -206,6 +206,7 @@ onMounted(() => {
 });
 
 const refresh = async () => {
+  data.value = Data;
   let Contract = new props.relWeb3.eth.Contract(
     LendingPoolAbi as any,
     leadingpoolContract
@@ -256,19 +257,19 @@ const refresh = async () => {
     item.walletBalance = Balance;
 
     //获取代币价格
-    let MockPriceOracleContract = new props.relWeb3.eth.Contract(
-      MockPriceOracleAbi as any,
-      oracleContract
-    );
-    let AssetPrice = await MockPriceOracleContract.methods
-      .getAssetPrice(item.contract)
-      .call((err: any, result: any) => {
-        if (!err) {
-          return result;
-        } else {
-          return "--";
-        }
-      });
+    // let MockPriceOracleContract = new props.relWeb3.eth.Contract(
+    //   MockPriceOracleAbi as any,
+    //   oracleContract
+    // );
+    // let AssetPrice = await MockPriceOracleContract.methods
+    //   .getAssetPrice(item.contract)
+    //   .call((err: any, result: any) => {
+    //     if (!err) {
+    //       return result;
+    //     } else {
+    //       return "--";
+    //     }
+    //   });
     // console.log("AssetPrice", AssetPrice);
     let lendingPoolContract = new props.relWeb3.eth.Contract(
       LendingPoolAbi as any,
@@ -283,9 +284,9 @@ const refresh = async () => {
           return "--";
         }
       });
-    let rate = new BigNumber(userAccount.totalBorrowBalanceBase).dividedBy(new BigNumber(userAccount.totalCollateralBalanceBase)).toFixed(4);
-    console.log("userAccount", userAccount);
-    // console.log("rate", rate, balance.totalLiquidityBalanceBase);
+    let rate = new BigNumber(userAccount.totalBorrowBalanceBase)
+      .dividedBy(new BigNumber(userAccount.totalCollateralBalanceBase))
+      .toFixed(4);
     item.rate = rate;
   }
 };
@@ -305,46 +306,40 @@ const liquidate = async (item: any) => {
     if (
       children.address === item.address &&
       Number(children.liquidityBalance) > 0
-    ) { // 只有借的金额>0的pool才可以用做清算的参数liquidateShares
+    ) {
+      // 只有借的金额>0的pool才可以用做清算的参数liquidateShares
       canShareCoin.value = children.coin;
       canShareContract.value = children.contract;
-      console.log(children);
-
     }
 
     let lendingPoolContract = new props.relWeb3.eth.Contract(
-        LendingPoolAbi as any,
-        leadingpoolContract
+      LendingPoolAbi as any,
+      leadingpoolContract
     );
     let pool = await lendingPoolContract.methods
-        .getPool(item.contract)
-        .call((err: any, result: any) => {
-          if (!err) {
-            return result;
-          } else {
-            return "--";
-          }
-        });
+      .getPool(item.contract)
+      .call((err: any, result: any) => {
+        if (!err) {
+          return result;
+        } else {
+          return "--";
+        }
+      });
 
     totalBorrowShares.value = pool.totalBorrowShares;
     totalBorrows.value = pool.totalBorrows;
-    // liquidateAmount = _shareAmount.mul(pool.totalBorrows).divCeil(pool.totalBorrowShares)
-    // _shareAmount = liquidateAmount / totalBorrows * totalBorrowShares
-    let liquidateAmount = new BigNumber(liquidatePercent.value)
-        .multipliedBy(new BigNumber(chooseItem.value.borrowBalance));
+    let liquidateAmount = new BigNumber(liquidatePercent.value).multipliedBy(
+      new BigNumber(chooseItem.value.borrowBalance)
+    );
 
-
-    liquidateSharesAmount.value = liquidateAmount.multipliedBy(
-            new BigNumber(pool.totalBorrowShares).dividedBy(
-                new BigNumber(pool.totalBorrows)
-            )
+    liquidateSharesAmount.value = liquidateAmount
+      .multipliedBy(
+        new BigNumber(pool.totalBorrowShares).dividedBy(
+          new BigNumber(pool.totalBorrows)
         )
-        .toFixed(4);
-
-
+      )
+      .toFixed(4);
   });
-
-
 };
 const Approve = async () => {
   let approveContract = new props.relWeb3.eth.Contract(
@@ -353,11 +348,11 @@ const Approve = async () => {
   );
   approveContract.methods
     .approve(
-        leadingpoolContract,
+      leadingpoolContract,
       new BigNumber(
-        new BigNumber(liquidatePercent.value)
-          .multipliedBy(new BigNumber(chooseItem.value.borrowBalance))
-          // .plus(1)
+        new BigNumber(liquidatePercent.value).multipliedBy(
+          new BigNumber(chooseItem.value.borrowBalance)
+        )
       )
         .multipliedBy(Math.pow(10, 18))
         .toFixed()
@@ -375,29 +370,28 @@ const LiquidateConfirm = async () => {
     LendingPoolAbi as any,
     leadingpoolContract
   );
-  //.plus(new BigNumber(10))
-  console.log(chooseItem.value.address);
-  console.log(chooseItem.value.contract);
-  console.log("liquidateSharesAmount###",new BigNumber(liquidateSharesAmount.value).dividedBy(new BigNumber(1)).multipliedBy(Math.pow(10, 18)).toFixed());
-  console.log(canShareContract.value)
   let gasPrice = await props.relWeb3.eth.getGasPrice();
   lendingPoolContract.methods
     .liquidate(
       chooseItem.value.address,
       chooseItem.value.contract,
-      new BigNumber(liquidateSharesAmount.value).dividedBy(new BigNumber(1)).multipliedBy(Math.pow(10, 18)),
+      new BigNumber(liquidateSharesAmount.value).multipliedBy(Math.pow(10, 18)),
       canShareContract.value
     )
-    .send({ from: props.address,
-      gasPrice: gasPrice,
-      gas: props.relWeb3.utils.toHex(902487),
-    }, (err: any, result: any) => {
-      if (err) {
-        message.error(JSON.stringify(err.message));
-      } else {
-        message.success(JSON.stringify(result));
+    .send(
+      {
+        from: props.address,
+        gasPrice: gasPrice,
+        gas: props.relWeb3.utils.toHex(902487),
+      },
+      (err: any, result: any) => {
+        if (err) {
+          message.error(JSON.stringify(err.message));
+        } else {
+          message.success(JSON.stringify(result));
+        }
       }
-    });
+    );
 };
 </script>
 
