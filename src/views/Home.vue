@@ -82,7 +82,7 @@
                       Withdraw
                     </Button>
                   </TabPane>
-                  <TabPane tab="Borrow" key="3">
+                  <!-- <TabPane tab="Borrow" key="3">
                     <Space :size="8" direction="vertical">
                       <div>share token: {{ shareToken }}</div>
                       <div>borrowed(USDA): {{ usdaBorrowed }}</div>
@@ -143,6 +143,33 @@
                         use LP
                       </Button>
                     </Space>
+                  </TabPane> -->
+                  <TabPane tab="BorrowDeposit" key="3">
+                    <div>
+                      collateral(aLP):
+                      {{
+                        new BigNumber(alpBalance)
+                          .dividedBy(Math.pow(10, 18))
+                          .toFixed(4)
+                      }}
+                    </div>
+                    <div>Borrow Token:</div>
+                    <RadioGroup v-model:value="borrowToken">
+                      <Radio value="USDT">USDT</Radio>
+                    </RadioGroup>
+                    <div>max borrow: {{ maxBorrow }}(USDT)</div>
+                    <Input
+                      class="amountInput"
+                      placeholder="collateral(aLP) amount"
+                      :value="BorrowDepositAmount"
+                      @change="BorrowDepositAmountChange"
+                    />
+                    <div class="spaceSty">
+                      can borrow: {{ canBorrow }}(USDT)
+                    </div>
+                    <Button type="primary" size="large" @click="BorrowDeposit">
+                      BorrowDeposit
+                    </Button>
                   </TabPane>
                 </Tabs>
               </div>
@@ -446,6 +473,8 @@ import {
   Table,
   Modal,
   Switch,
+  RadioGroup,
+  Radio,
 } from "ant-design-vue";
 import Web3 from "web3";
 import Liquidation from "@/views/components/Liquidation.vue";
@@ -454,6 +483,7 @@ import Erc20Abi from "@/utils/erc20.abi.json";
 import ManageAbi from "@/utils/manageAbi.abi.json";
 import Psc from "@/utils/psc.abi.json";
 import InfoAbi from "@/utils/info.abi.json";
+import LendingPoolFarmAbi from "@/utils/lendingPool_mara_farm.abi.json";
 
 //Lend使用的abi
 import LendingPoolAbi from "@/utils/LendingPool_metadata.abi.json";
@@ -471,6 +501,7 @@ import {
   pscContract,
   usdaContract,
   infoContract,
+  leadingpoolFarmContract,
   leadingpoolContract,
   bnbContract,
   daiContract,
@@ -609,6 +640,18 @@ const RepayVisible = ref<boolean>(false);
 const RepayModalTitle = ref<string | number>("withdraw");
 const LendRepayAmount = ref<string | number>("");
 const BorrowBalance = ref<string | number>("0");
+
+const alpBalance = ref<string | number>("0");
+const borrowToken = ref<string | number>("USDT");
+const BorrowDepositAmount = ref<string | number>("");
+const maxBorrow = ref<string | number>("--");
+const canBorrow = ref<string | number>("--");
+
+const alpContract = ref<any>();
+const lpAmountTotal = ref<any>();
+const lpTokenPrice = ref<any>();
+const lendingPoolCollateralPercent = ref<any>();
+const totalSupply = ref<any>();
 
 //Config
 const configParams = ref<any>({});
@@ -1338,59 +1381,59 @@ const withdraw = async () => {
 };
 
 const showTabPane = async (item: any) => {
-  if (item === "3") {
-    //获取sharePool
-    let ShareContract = new relWeb3.value.eth.Contract(
-      Erc20Abi as any,
-      shareContract
-    );
-    let ShareToken = await ShareContract.methods
-      .balanceOf(address.value)
-      .call((err: any, result: any) => {
-        if (!err) {
-          return result;
-        } else {
-          return "--";
-        }
-      });
-    shareToken.value = new BigNumber(ShareToken)
-      .dividedBy(Math.pow(10, 18))
-      .toFixed(4);
+  // if (item === "3") {
+  //   //获取sharePool
+  //   let ShareContract = new relWeb3.value.eth.Contract(
+  //     Erc20Abi as any,
+  //     shareContract
+  //   );
+  //   let ShareToken = await ShareContract.methods
+  //     .balanceOf(address.value)
+  //     .call((err: any, result: any) => {
+  //       if (!err) {
+  //         return result;
+  //       } else {
+  //         return "--";
+  //       }
+  //     });
+  //   shareToken.value = new BigNumber(ShareToken)
+  //     .dividedBy(Math.pow(10, 18))
+  //     .toFixed(4);
 
-    let InfoContract = new relWeb3.value.eth.Contract(
-      InfoAbi as any,
-      infoContract,
-      {
-        from: address.value,
-      }
-    );
-    let borrowedArr = await InfoContract.methods
-      .getUser(0, address.value)
-      .call((err: any, result: any) => {
-        if (!err) {
-          return result;
-        } else {
-          return "--";
-        }
-      });
-    usdaBorrowed.value = new BigNumber(borrowedArr.usdaBorrowed)
-      .dividedBy(Math.pow(10, 18))
-      .toFixed(4);
+  //   let InfoContract = new relWeb3.value.eth.Contract(
+  //     InfoAbi as any,
+  //     infoContract,
+  //     {
+  //       from: address.value,
+  //     }
+  //   );
+  //   let borrowedArr = await InfoContract.methods
+  //     .getUser(0, address.value)
+  //     .call((err: any, result: any) => {
+  //       if (!err) {
+  //         return result;
+  //       } else {
+  //         return "--";
+  //       }
+  //     });
+  //   usdaBorrowed.value = new BigNumber(borrowedArr.usdaBorrowed)
+  //     .dividedBy(Math.pow(10, 18))
+  //     .toFixed(4);
 
-    //获取interest rate
-    let interestRateArr = await InfoContract.methods
-      .getPool(0)
-      .call((err: any, result: any) => {
-        if (!err) {
-          return result;
-        } else {
-          return "--";
-        }
-      });
-    interestRate.value = new BigNumber(interestRateArr.interestRate)
-      .dividedBy(100)
-      .toFixed(2);
-  }
+  //   //获取interest rate
+  //   let interestRateArr = await InfoContract.methods
+  //     .getPool(0)
+  //     .call((err: any, result: any) => {
+  //       if (!err) {
+  //         return result;
+  //       } else {
+  //         return "--";
+  //       }
+  //     });
+  //   interestRate.value = new BigNumber(interestRateArr.interestRate)
+  //     .dividedBy(100)
+  //     .toFixed(2);
+  // }
   if (item === "4") {
     let InfoContract = new relWeb3.value.eth.Contract(
       InfoAbi as any,
@@ -1430,6 +1473,84 @@ const showTabPane = async (item: any) => {
     testNeedToRepay.value = new BigNumber(borrowedArr.usdaBorrowed)
       .multipliedBy(new BigNumber(10000).plus(interestRateArr.interestRate))
       .toFixed(0);
+  }
+  if (item === "3") {
+    //获取ALP balance
+    let Contract = new relWeb3.value.eth.Contract(
+      Erc20Abi as any,
+      shareContract
+    );
+    let resBalance = await Contract.methods
+      .balanceOf(address.value)
+      .call((err: any, result: any) => {
+        if (!err) {
+          return result;
+        } else {
+          return "--";
+        }
+      });
+    let ALPBalance = new BigNumber(resBalance).toFixed(4);
+    alpBalance.value = ALPBalance;
+
+    let lendingPoolContract = new relWeb3.value.eth.Contract(
+      LendingPoolFarmAbi as any,
+      leadingpoolFarmContract
+    );
+    let PscContract = new relWeb3.value.eth.Contract(Psc as any, pscContract, {
+      from: address.value,
+    });
+    let alpContract = new relWeb3.value.eth.Contract(
+      Erc20Abi as any,
+      shareContract
+    );
+    alpContract.value = alpContract;
+    let LpAmountTotal = await PscContract.methods
+      .lpAmountTotal()
+      .call((err: any, result: any) => {
+        if (!err) {
+          return result;
+        } else {
+          return "--";
+        }
+      });
+    lpAmountTotal.value = LpAmountTotal;
+    let LpTokenPrice = await PscContract.methods
+      .getLpTokenPrice()
+      .call((err: any, result: any) => {
+        if (!err) {
+          return result;
+        } else {
+          return "--";
+        }
+      });
+    lpTokenPrice.value = LpTokenPrice;
+    let LendingPoolCollateralPercent = await lendingPoolContract.methods
+      .getCollateralPercent(shareContract)
+      .call((err: any, result: any) => {
+        if (!err) {
+          return result;
+        } else {
+          return "--";
+        }
+      });
+    lendingPoolCollateralPercent.value = LendingPoolCollateralPercent;
+    let TotalSupply = await alpContract.methods
+      .totalSupply()
+      .call((err: any, result: any) => {
+        if (!err) {
+          return result;
+        } else {
+          return "--";
+        }
+      });
+    totalSupply.value = TotalSupply;
+    maxBorrow.value = new BigNumber(ALPBalance)
+      .multipliedBy(new BigNumber(LpAmountTotal))
+      .multipliedBy(new BigNumber(LpTokenPrice))
+      .multipliedBy(new BigNumber(LendingPoolCollateralPercent))
+      .dividedBy(new BigNumber(TotalSupply))
+      .dividedBy(new BigNumber(Math.pow(10, 36)))
+      .toFixed(4);
   }
 };
 
@@ -1580,6 +1701,21 @@ const shareTokenChange = async (e: Event) => {
       .dividedBy(Math.pow(10, 18))
       .toFixed(4);
   }
+};
+
+const BorrowDepositAmountChange = (e: Event) => {
+  BorrowDepositAmount.value = (e.target as HTMLInputElement).value;
+  canBorrow.value = new BigNumber((e.target as HTMLInputElement).value)
+    .multipliedBy(new BigNumber(lpAmountTotal.value))
+    .multipliedBy(new BigNumber(lpTokenPrice.value))
+    .multipliedBy(new BigNumber(lendingPoolCollateralPercent.value))
+    .dividedBy(new BigNumber(totalSupply.value))
+    .dividedBy(new BigNumber(Math.pow(10, 18)))
+    .toFixed(4);
+};
+
+const BorrowDeposit = async () => {
+  console.log(1);
 };
 </script>
 

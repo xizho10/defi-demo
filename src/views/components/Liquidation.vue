@@ -143,6 +143,7 @@ const Data = [
     abi: BNBTokenAbi,
     cannotLiquidation: true,
     liquidityBalance: "0",
+    assetPrice: "0",
     rate: "0",
   },
   {
@@ -152,6 +153,7 @@ const Data = [
     abi: DAITokenAbi,
     cannotLiquidation: true,
     liquidityBalance: "0",
+    assetPrice: "0",
     rate: "0",
   },
   {
@@ -161,6 +163,7 @@ const Data = [
     abi: BNBTokenAbi,
     cannotLiquidation: true,
     liquidityBalance: "0",
+    assetPrice: "0",
     rate: "0",
   },
   {
@@ -170,6 +173,7 @@ const Data = [
     abi: DAITokenAbi,
     cannotLiquidation: true,
     liquidityBalance: "0",
+    assetPrice: "0",
     rate: "0",
   },
   {
@@ -179,6 +183,7 @@ const Data = [
     abi: BNBTokenAbi,
     cannotLiquidation: true,
     liquidityBalance: "0",
+    assetPrice: "0",
     rate: "0",
   },
   {
@@ -188,6 +193,7 @@ const Data = [
     abi: DAITokenAbi,
     cannotLiquidation: true,
     liquidityBalance: "0",
+    assetPrice: "0",
     rate: "0",
   },
 ];
@@ -257,20 +263,21 @@ const refresh = async () => {
     item.walletBalance = Balance;
 
     //获取代币价格
-    // let MockPriceOracleContract = new props.relWeb3.eth.Contract(
-    //   MockPriceOracleAbi as any,
-    //   oracleContract
-    // );
-    // let AssetPrice = await MockPriceOracleContract.methods
-    //   .getAssetPrice(item.contract)
-    //   .call((err: any, result: any) => {
-    //     if (!err) {
-    //       return result;
-    //     } else {
-    //       return "--";
-    //     }
-    //   });
-    // console.log("AssetPrice", AssetPrice);
+    let MockPriceOracleContract = new props.relWeb3.eth.Contract(
+      MockPriceOracleAbi as any,
+      oracleContract
+    );
+    let AssetPrice = await MockPriceOracleContract.methods
+      .getAssetPrice(item.contract)
+      .call((err: any, result: any) => {
+        if (!err) {
+          return result;
+        } else {
+          return "--";
+        }
+      });
+    console.log("AssetPrice", AssetPrice);
+    item.assetPrice = AssetPrice;
     let lendingPoolContract = new props.relWeb3.eth.Contract(
       LendingPoolAbi as any,
       leadingpoolContract
@@ -328,10 +335,10 @@ const liquidate = async (item: any) => {
 
     totalBorrowShares.value = pool.totalBorrowShares;
     totalBorrows.value = pool.totalBorrows;
-    let liquidateAmount = new BigNumber(liquidatePercent.value).multipliedBy(
-      new BigNumber(chooseItem.value.borrowBalance)
-    );
-
+    let liquidateAmount = new BigNumber(liquidatePercent.value)
+      .multipliedBy(new BigNumber(chooseItem.value.borrowBalance))
+      .multipliedBy(chooseItem.value.assetPrice)
+      .dividedBy(Math.pow(10, 18));
     liquidateSharesAmount.value = liquidateAmount
       .multipliedBy(
         new BigNumber(pool.totalBorrowShares).dividedBy(
