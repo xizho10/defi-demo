@@ -45,11 +45,12 @@
         <Radio value="0.6">60%</Radio>
       </RadioGroup>
     </p>
-    <p>liquidateShares: {{ liquidateSharesAmount }}</p>
+    <p>liquidateShares: {{ new BigNumber(liquidateSharesAmount).toFixed(4) }}</p>
     <p>
       liquidateAmount:{{
-        new BigNumber(liquidatePercent)
-          .multipliedBy(new BigNumber(chooseItem.borrowBalance))
+        // new BigNumber(liquidatePercent)
+        //   .multipliedBy(new BigNumber(chooseItem.borrowBalance))
+        new BigNumber(liquidateAmount)
           .toFixed(4)
       }}
     </p>
@@ -206,6 +207,7 @@ const liquidatePercent = ref<string | number>("0.1");
 const totalBorrowShares = ref<string | number>("");
 const totalBorrows = ref<string | number>("");
 const liquidateSharesAmount = ref<string | number>("");
+const liquidateAmount = ref<string | any | number>("");
 
 onMounted(() => {
   refresh();
@@ -335,17 +337,18 @@ const liquidate = async (item: any) => {
 
     totalBorrowShares.value = pool.totalBorrowShares;
     totalBorrows.value = pool.totalBorrows;
-    let liquidateAmount = new BigNumber(liquidatePercent.value)
+    let liquidateAmountTmp = new BigNumber(liquidatePercent.value)
       .multipliedBy(new BigNumber(chooseItem.value.borrowBalance))
       .multipliedBy(chooseItem.value.assetPrice)
       .dividedBy(Math.pow(10, 18));
-    liquidateSharesAmount.value = liquidateAmount
+    liquidateAmount.value =  liquidateAmountTmp;
+    liquidateSharesAmount.value = liquidateAmountTmp
       .multipliedBy(
         new BigNumber(pool.totalBorrowShares).dividedBy(
           new BigNumber(pool.totalBorrows)
         )
       )
-      .toFixed(4);
+      .toFixed(18);
   });
 };
 const Approve = async () => {
@@ -357,11 +360,9 @@ const Approve = async () => {
     .approve(
       leadingpoolContract,
       new BigNumber(
-        new BigNumber(liquidatePercent.value).multipliedBy(
-          new BigNumber(chooseItem.value.borrowBalance)
-        )
+          liquidateAmount.value
       )
-        .multipliedBy(new BigNumber(1.0001))
+        .multipliedBy(new BigNumber(1.001))
         .multipliedBy(Math.pow(10, 18))
         .toFixed()
     )
