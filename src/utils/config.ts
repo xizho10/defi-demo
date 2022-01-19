@@ -1,10 +1,10 @@
-const lpContract = "0xC11Bf8c9B0aB7855E7EDa9d6e915705C1A89Be94";
-const manageContract = "0x9BAd3A1b7e073c71d22109ba6531014565576893";
-const shareContract = "0xcAB831454d28f19ffE851EcC5698C1E3c45E5b66";
-const pscContract = "0x1b7448Ae8a09a2302952ee7d5c3f80d76e6d9Ac9";
-const usdaContract = "0x51A3426C594B5C6a284b119dBf253D5e95b62887";
-const infoContract = "0x32369474e88861f9B96773D8a3B799d33753C029";
-const leadingpoolFarmContract = "0xb88e8833ebF25c2dDd0ccC1069739dc7766b6BfD";
+const lpContract = "0x1E5Ee8FDBED23F70CB7f6Dd658318E391271d467";
+const manageContract = "0x7e53F7fCD0099AE9A0010FF2a7F7a211E8eAeA91";
+const shareContract = "0x433b1e6cc81531142d5DB368c4788A189A7E6727";
+const pscContract = "0xc8576FB94ad58E199dE8deB5A24e5741DaE0E9a4";
+const usdaContract = "0x4Ed7e2B0c37D30F7B0ed70353e023695642252eC";
+const infoContract = "0x55E40Bff1fAEF65D6a6bC88F2d622C07FFd76ADA";
+const leadingpoolFarmContract = "0x30E603b4Dd44Cffeb4E7069398b6A388a60a4B7C";
 
 const leadingpoolContract = "0x08D68063DAEA04B0C40535562351C13C6E249a53";
 // const leadingpoolContract = "0x938eddBf4C720967D51675408974C11891f4BEAc";

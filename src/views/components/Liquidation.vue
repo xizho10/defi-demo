@@ -45,15 +45,10 @@
         <Radio value="0.6">60%</Radio>
       </RadioGroup>
     </p>
-    <p>liquidateShares: {{ new BigNumber(liquidateSharesAmount).toFixed(4) }}</p>
     <p>
-      liquidateAmount:{{
-        // new BigNumber(liquidatePercent)
-        //   .multipliedBy(new BigNumber(chooseItem.borrowBalance))
-        new BigNumber(liquidateAmount)
-          .toFixed(4)
-      }}
+      liquidateShares: {{ new BigNumber(liquidateSharesAmount).toFixed(4) }}
     </p>
+    <p>liquidateAmount:{{ new BigNumber(liquidateAmount).toFixed(4) }}</p>
     <p>
       totalBorrowShares:
       {{
@@ -94,7 +89,6 @@ import {
   bnbContract,
   daiContract,
   oracleContract,
-  collateralPercent,
 } from "@/utils/config";
 import MockPriceOracleAbi from "@/utils/MockPriceOracle_metadata.abi.json";
 
@@ -109,7 +103,7 @@ const columns = [
     dataIndex: "address",
   },
   {
-    title: "Coin",
+    title: "Asset",
     dataIndex: "coin",
   },
   {
@@ -241,10 +235,10 @@ const refresh = async () => {
       });
     item.liquidityBalance = new BigNumber(response.compoundedLiquidityBalance)
       .dividedBy(Math.pow(10, 18))
-      .toFixed(4);
+      .toFixed();
     item.borrowBalance = new BigNumber(response.compoundedBorrowBalance)
       .dividedBy(Math.pow(10, 18))
-      .toFixed(4);
+      .toFixed();
     //获取钱包代币余额
     let balanceContract = new props.relWeb3.eth.Contract(
       item.abi as any,
@@ -261,7 +255,7 @@ const refresh = async () => {
       });
     let Balance = new BigNumber(resBalance)
       .dividedBy(Math.pow(10, 18))
-      .toFixed(4);
+      .toFixed();
     item.walletBalance = Balance;
 
     //获取代币价格
@@ -278,7 +272,6 @@ const refresh = async () => {
           return "--";
         }
       });
-    console.log("AssetPrice", AssetPrice);
     item.assetPrice = AssetPrice;
     let lendingPoolContract = new props.relWeb3.eth.Contract(
       LendingPoolAbi as any,
@@ -341,7 +334,7 @@ const liquidate = async (item: any) => {
       .multipliedBy(new BigNumber(chooseItem.value.borrowBalance))
       .multipliedBy(chooseItem.value.assetPrice)
       .dividedBy(Math.pow(10, 18));
-    liquidateAmount.value =  liquidateAmountTmp;
+    liquidateAmount.value = liquidateAmountTmp;
     liquidateSharesAmount.value = liquidateAmountTmp
       .multipliedBy(
         new BigNumber(pool.totalBorrowShares).dividedBy(
@@ -356,13 +349,16 @@ const Approve = async () => {
     chooseItem.value.abi as any,
     chooseItem.value.contract
   );
+  console.log(
+    "approve Amount",
+    new BigNumber(liquidateAmount.value)
+      .multipliedBy(Math.pow(10, 18))
+      .toFixed()
+  );
   approveContract.methods
     .approve(
       leadingpoolContract,
-      new BigNumber(
-          liquidateAmount.value
-      )
-        .multipliedBy(new BigNumber(1.001))
+      new BigNumber(liquidateAmount.value)
         .multipliedBy(Math.pow(10, 18))
         .toFixed()
     )
@@ -375,6 +371,12 @@ const Approve = async () => {
     });
 };
 const LiquidateConfirm = async () => {
+  console.log(
+    "confirm",
+    new BigNumber(liquidateSharesAmount.value)
+      .multipliedBy(Math.pow(10, 18))
+      .toFixed()
+  );
   let lendingPoolContract = new props.relWeb3.eth.Contract(
     LendingPoolAbi as any,
     leadingpoolContract
@@ -384,7 +386,9 @@ const LiquidateConfirm = async () => {
     .liquidate(
       chooseItem.value.address,
       chooseItem.value.contract,
-      new BigNumber(liquidateSharesAmount.value).multipliedBy(Math.pow(10, 18)),
+      new BigNumber(liquidateSharesAmount.value)
+        .multipliedBy(Math.pow(10, 18))
+        .toFixed(),
       canShareContract.value
     )
     .send(
