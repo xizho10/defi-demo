@@ -1,38 +1,24 @@
 <template>
   <div class="about">
-    <div>
-      <p>lpContract: {{ lpContract }}</p>
-      <p>manageContract: {{ manageContract }}</p>
-      <p>shareContract: {{ shareContract }}</p>
-      <p>pscContract: {{ pscContract }}</p>
-      <p>usdaContract: {{ usdaContract }}</p>
-      <p>infoContract: {{ infoContract }}</p>
-      <p>leadingpoolFarmContract: {{ leadingpoolFarmContract }}</p>
-      <p>leadingpoolContract: {{ leadingpoolContract }}</p>
-      <p>bnbContract: {{ bnbContract }}</p>
-      <p>daiContract: {{ daiContract }}</p>
-      <p>busdContract: {{ busdContract }}</p>
-      <p>
-        alphaReleaseRuleSelectorContract:
-        {{ alphaReleaseRuleSelectorContract }}
-      </p>
-      <p>oracleContract: {{ oracleContract }}</p>
-    </div>
-    <Button type="primary" size="large" @click="refresh" class="refresh"
-      >Refresh</Button
-    >
-    <Table :columns="columns" :data-source="data">
-      <template #bodyCell="{ column, record }">
-        <template v-if="column.keys === 'option'">
-          <Button
-            type="primary"
-            size="large"
-            @click="() => setAssetPrice(record)"
-            >setAssetPrice
-          </Button>
-        </template>
-      </template>
-    </Table>
+    <Tabs defaultActiveKey="1" @change="tabsChange">
+      <TabPane tab="ConfigParams" key="1">
+        <Table :columns="contractColumns" :data-source="contractData"></Table>
+      </TabPane>
+      <TabPane tab="Config" key="2">
+        <Table :columns="columns" :data-source="data">
+          <template #bodyCell="{ column, record }">
+            <template v-if="column.keys === 'option'">
+              <Button
+                type="primary"
+                size="large"
+                @click="() => setAssetPrice(record)"
+                >setAssetPrice
+              </Button>
+            </template>
+          </template>
+        </Table>
+      </TabPane>
+    </Tabs>
   </div>
   <Modal
     :visible="Visible"
@@ -56,7 +42,7 @@
 <script lang="ts" setup>
 import { ref, onMounted } from "vue";
 import BigNumber from "bignumber.js";
-import { Button, Table, message, Modal } from "ant-design-vue";
+import { Button, Table, message, Modal, Tabs, TabPane } from "ant-design-vue";
 import {
   lpContract,
   manageContract,
@@ -116,6 +102,75 @@ const Data = [
     abi: DAITokenAbi,
   },
 ];
+
+const contractColumns = [
+  {
+    title: "Contract Title",
+    dataIndex: "title",
+    keys: "title",
+  },
+  {
+    title: "Address",
+    dataIndex: "contract",
+    keys: "contract",
+  },
+];
+
+const contractData = [
+  {
+    title: "lpContract",
+    contract: lpContract,
+  },
+  {
+    title: "manageContract",
+    contract: manageContract,
+  },
+  {
+    title: "shareContract",
+    contract: shareContract,
+  },
+  {
+    title: "pscContract",
+    contract: pscContract,
+  },
+  {
+    title: "usdaContract",
+    contract: usdaContract,
+  },
+  {
+    title: "infoContract",
+    contract: infoContract,
+  },
+  {
+    title: "leadingpoolFarmContract",
+    contract: leadingpoolFarmContract,
+  },
+  {
+    title: "leadingpoolContract",
+    contract: leadingpoolContract,
+  },
+  {
+    title: "bnbContract",
+    contract: bnbContract,
+  },
+  {
+    title: "daiContract",
+    contract: daiContract,
+  },
+  {
+    title: "busdContract",
+    contract: busdContract,
+  },
+  {
+    title: "alphaReleaseRuleSelectorContract",
+    contract: alphaReleaseRuleSelectorContract,
+  },
+  {
+    title: "oracleContract",
+    contract: oracleContract,
+  },
+];
+
 const data = ref<any>(Data);
 const Visible = ref<boolean>(false);
 const assetPrice = ref<string | number>("");
@@ -125,10 +180,14 @@ onMounted(() => {
   refresh();
 });
 
+const tabsChange = (item: string) => {
+  if (item === "2") {
+    refresh();
+  }
+};
+
 const refresh = async () => {
-  console.log("data1", data.value);
   data.value = Data;
-  console.log("data2", data.value);
   let MockPriceOracleContract = new props.relWeb3.eth.Contract(
     MockPriceOracleAbi as any,
     oracleContract

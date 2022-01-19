@@ -155,9 +155,10 @@
             <Liquidation :relWeb3="relWeb3" :address="address" />
           </TabPane>
           <TabPane tab="Settings" key="4">
-            <p>receiver: {{ configParams?.receiver }}</p>
-            <p>rule: {{ configParams?.rule }}</p>
             <Settings :relWeb3="relWeb3" :address="address" />
+          </TabPane>
+          <TabPane tab="Records" key="5">
+            <Records />
           </TabPane>
         </Tabs>
       </div>
@@ -258,6 +259,7 @@ import Web3 from "web3";
 import Liquidation from "@/views/components/Liquidation.vue";
 import Lend from "@/views/components/Lend.vue";
 import Settings from "@/views/components/Settings.vue";
+import Records from "@/views/components/Records.vue";
 import BigNumber from "bignumber.js";
 import Erc20Abi from "@/utils/erc20.abi.json";
 import ManageAbi from "@/utils/manageAbi.abi.json";
@@ -359,9 +361,6 @@ const lpTokenPrice = ref<any>();
 const lendingPoolCollateralPercent = ref<any>();
 const totalSupply = ref<any>();
 
-//Config
-const configParams = ref<any>({});
-
 //后期需要调整
 const testNeedToRepay = ref<string | number>("");
 
@@ -400,16 +399,6 @@ const farmOrLendOnChange = async (children: any) => {
           return "--";
         }
       });
-    let addressArr = await Contract.methods
-      .receiverRuleList(res - 1)
-      .call((err: any, result: any) => {
-        if (!err) {
-          return result;
-        } else {
-          return "--";
-        }
-      });
-    configParams.value = addressArr;
   }
 };
 
@@ -1060,6 +1049,7 @@ const BorrowDeposit = async () => {
   min-height: calc(100vh - 120px);
   flex-direction: column;
   .connectBtn {
+    width: 100%;
     margin: 40px auto;
     text-align: center;
   }
