@@ -60,7 +60,6 @@ const {
   usdaContract,
   infoContract,
   farmPoolContract,
-  leadingpoolContract,
   bnbContract,
   daiContract,
   busdContract,
@@ -123,10 +122,6 @@ const contractData = [
   {
     title: "farmPoolContract",
     contract: farmPoolContract,
-  },
-  {
-    title: "leadingpoolContract",
-    contract: leadingpoolContract,
   },
   {
     title: "bnbContract",

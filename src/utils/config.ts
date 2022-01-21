@@ -7,8 +7,7 @@ const usdaContract = "0x4Ed7e2B0c37D30F7B0ed70353e023695642252eC";
 const infoContract = "0x55E40Bff1fAEF65D6a6bC88F2d622C07FFd76ADA";
 const farmPoolContract = "0x30E603b4Dd44Cffeb4E7069398b6A388a60a4B7C";
 
-const leadingpoolContract = "0x5F527c2737D5EccB7E55aa3719928920D5A391bA";
-// const leadingpoolContract = "0x938eddBf4C720967D51675408974C11891f4BEAc";
+// const lendpoolContract = "0x938eddBf4C720967D51675408974C11891f4BEAc";
 const bnbContract = "0x5917544742c7CB43EDac6d78aE0a633BF044e23c";
 const daiContract = "0x451ddD00e28A9631f24505033F1CC07dE89A0C3A";
 const busdContract = "0x31153B9A97DFaB4975053563A6EfD0D4c4cdAD99";
@@ -31,7 +30,6 @@ export {
   usdaContract,
   infoContract,
   farmPoolContract,
-  leadingpoolContract,
   bnbContract,
   daiContract,
   busdContract,

@@ -296,7 +296,7 @@ const store = useStore();
 
 const {
   usdaContract,
-  leadingpoolContract,
+  lendpoolContract,
   bnbContract,
   daiContract,
   busdContract,
@@ -446,7 +446,7 @@ onMounted(() => {
 const refresh = async () => {
   let Contract = new props.relWeb3.eth.Contract(
     LendingPoolAbi as any,
-    leadingpoolContract
+    lendpoolContract
   );
   for (let item of data.value) {
     let res = await Contract.methods
@@ -634,7 +634,7 @@ const refresh = async () => {
     item.depositReward = matoken;
     //获取borrowReward
     let borrowReward = await Contract.methods
-      .calculateReward(leadingpoolContract, props.address)
+      .calculateReward(lendpoolContract, props.address)
       .call((err: any, result: any) => {
         if (!err) {
           return result;
@@ -649,7 +649,7 @@ const refresh = async () => {
 const clickSwitch = async (item: any) => {
   let lendingPoolContract = new props.relWeb3.eth.Contract(
     LendingPoolAbi as any,
-    leadingpoolContract
+    lendpoolContract
   );
   let gasPrice = await props.relWeb3.eth.getGasPrice(); //获取当前gas价格
   await lendingPoolContract.methods
@@ -692,7 +692,7 @@ const openBorrowModal = async (item: any) => {
   borrowVisible.value = true;
   let lendingPoolContract = new props.relWeb3.eth.Contract(
     LendingPoolAbi as any,
-    leadingpoolContract
+    lendpoolContract
   );
   let balance = await lendingPoolContract.methods
     .getUserAccount(props.address)
@@ -735,7 +735,7 @@ const borrowModalHandleCancel = () => {
 const claim = async () => {
   let lendingPoolContract = new props.relWeb3.eth.Contract(
     LendingPoolAbi as any,
-    leadingpoolContract
+    lendpoolContract
   );
   let gasPrice = await props.relWeb3.eth.getGasPrice(); //获取当前gas价格
   await lendingPoolContract.methods.claimAlpha().send(
@@ -794,7 +794,7 @@ const lendApprove = async () => {
   //approve参数: 1.币种地址,2.金额
   Contract.methods
     .approve(
-      leadingpoolContract,
+      lendpoolContract,
       new BigNumber(LendApproveAmount.value)
         .multipliedBy(Math.pow(10, 18))
         .toFixed()
@@ -811,7 +811,7 @@ const lendApprove = async () => {
 const lendDeposit = async () => {
   let Contract = new props.relWeb3.eth.Contract(
     LendingPoolAbi as any,
-    leadingpoolContract,
+    lendpoolContract,
     {
       from: props.address,
     }
@@ -845,7 +845,7 @@ const lendDeposit = async () => {
 const lendBorrow = async () => {
   let Contract = new props.relWeb3.eth.Contract(
     LendingPoolAbi as any,
-    leadingpoolContract,
+    lendpoolContract,
     {
       from: props.address,
     }
@@ -879,7 +879,7 @@ const lendBorrow = async () => {
 const lendWithdraw = async () => {
   let Contract = new props.relWeb3.eth.Contract(
     LendingPoolAbi as any,
-    leadingpoolContract,
+    lendpoolContract,
     {
       from: props.address,
     }
@@ -921,7 +921,7 @@ const lendApproveRepay = () => {
   //approve参数: 1.币种地址,2.金额
   Contract.methods
     .approve(
-      leadingpoolContract,
+      lendpoolContract,
       new BigNumber(LendRepayAmount.value)
         .multipliedBy(Math.pow(10, 18))
         .toFixed()
@@ -938,7 +938,7 @@ const lendApproveRepay = () => {
 const lendRepay = async () => {
   let Contract = new props.relWeb3.eth.Contract(
     LendingPoolAbi as any,
-    leadingpoolContract,
+    lendpoolContract,
     {
       from: props.address,
     }

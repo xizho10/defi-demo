@@ -88,7 +88,7 @@ import DAITokenAbi from "@/utils/DaiToken_metadata.abi.json";
 import MockPriceOracleAbi from "@/utils/MockPriceOracle_metadata.abi.json";
 const store = useStore();
 
-const { leadingpoolContract, bnbContract, daiContract, oracleContract } =
+const { lendpoolContract, bnbContract, daiContract, oracleContract } =
   store.getters.getGlobalContract;
 
 const props = defineProps<{
@@ -210,7 +210,7 @@ const refresh = async () => {
   data.value = Data;
   let Contract = new props.relWeb3.eth.Contract(
     LendingPoolAbi as any,
-    leadingpoolContract
+    lendpoolContract
   );
   for (let item of data.value) {
     let res = await Contract.methods
@@ -274,7 +274,7 @@ const refresh = async () => {
     item.assetPrice = AssetPrice;
     let lendingPoolContract = new props.relWeb3.eth.Contract(
       LendingPoolAbi as any,
-      leadingpoolContract
+      lendpoolContract
     );
     let userAccount = await lendingPoolContract.methods
       .getUserAccount(item.address)
@@ -315,7 +315,7 @@ const liquidate = async (item: any) => {
 
     let lendingPoolContract = new props.relWeb3.eth.Contract(
       LendingPoolAbi as any,
-      leadingpoolContract
+      lendpoolContract
     );
     let pool = await lendingPoolContract.methods
       .getPool(item.contract)
@@ -350,7 +350,7 @@ const Approve = async () => {
   );
   approveContract.methods
     .approve(
-      leadingpoolContract,
+      lendpoolContract,
       new BigNumber(liquidateAmount.value)
         .multipliedBy(Math.pow(10, 18))
         .toFixed()
@@ -366,7 +366,7 @@ const Approve = async () => {
 const LiquidateConfirm = async () => {
   let lendingPoolContract = new props.relWeb3.eth.Contract(
     LendingPoolAbi as any,
-    leadingpoolContract
+    lendpoolContract
   );
   let gasPrice = await props.relWeb3.eth.getGasPrice();
   lendingPoolContract.methods

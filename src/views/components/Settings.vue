@@ -184,7 +184,7 @@ import ConfigParams from "@/views/components/ConfigParams.vue";
 const {
   manageContract,
   infoContract,
-  leadingpoolContract,
+  lendpoolContract,
   bnbContract,
   daiContract,
   oracleContract,
@@ -393,7 +393,7 @@ const setAllocPoint = async () => {
 const initPool = async () => {
   let lendPoolContract = new props.relWeb3.eth.Contract(
     LendingPoolAbi as any,
-    leadingpoolContract
+    lendpoolContract
   );
   let gasPrice = await props.relWeb3.eth.getGasPrice(); //获取当前gas价格
   await lendPoolContract.methods
@@ -419,7 +419,7 @@ const initPool = async () => {
 const withdrawReserve = async () => {
   let lendPoolContract = new props.relWeb3.eth.Contract(
     LendingPoolAbi as any,
-    leadingpoolContract
+    lendpoolContract
   );
   let gasPrice = await props.relWeb3.eth.getGasPrice(); //获取当前gas价格
   await lendPoolContract.methods
@@ -448,7 +448,7 @@ const withdrawReserve = async () => {
 const setPoolStatus = async () => {
   let lendPoolContract = new props.relWeb3.eth.Contract(
     LendingPoolAbi as any,
-    leadingpoolContract
+    lendpoolContract
   );
   let gasPrice = await props.relWeb3.eth.getGasPrice(); //获取当前gas价格
   await lendPoolContract.methods
@@ -474,7 +474,7 @@ const setPoolStatus = async () => {
 const setPriceOracle = async () => {
   let lendPoolContract = new props.relWeb3.eth.Contract(
     LendingPoolAbi as any,
-    leadingpoolContract
+    lendpoolContract
   );
   let gasPrice = await props.relWeb3.eth.getGasPrice(); //获取当前gas价格
   await lendPoolContract.methods
