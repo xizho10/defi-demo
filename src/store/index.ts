@@ -3,12 +3,12 @@ export default createStore({
   state: {
     contract: {
       Config: "0x23FCC55a51a0Bf4D0CA21FA1FF2C29CD710D17E7",
-      lpContract: "0x1E5Ee8FDBED23F70CB7f6Dd658318E391271d467",
-      manageContract: "0x7e53F7fCD0099AE9A0010FF2a7F7a211E8eAeA91",
-      shareContract: "0x433b1e6cc81531142d5DB368c4788A189A7E6727",
-      pscContract: "0xc8576FB94ad58E199dE8deB5A24e5741DaE0E9a4",
-      usdaContract: "0x4Ed7e2B0c37D30F7B0ed70353e023695642252eC",
-      infoContract: "0x55E40Bff1fAEF65D6a6bC88F2d622C07FFd76ADA",
+      lpContract: "0x127cc9F695A3bF4a4FFa9A39d72a5b8F504ECaef",
+      manageContract: "0x826B3f3e80b1Fd512712614e8f6B69C4d3Dd7089",
+      shareContract: "0x261F6Df6688f2dE62Fee50D90d4975FcBC304200",
+      pscContract: "0xc2Ee0bCacFBDF0cD3e6Dd173FEE6140f67aD9388",
+      usdaContract: "0xE6af65173411C5D507D9c851B7348741fe82F302",
+      infoContract: "0xdCbE91C2D5aA423a390D589893d227Da77Ab289e",
       farmPoolContract: "0x30E603b4Dd44Cffeb4E7069398b6A388a60a4B7C",
       bnbContract: "0x5917544742c7CB43EDac6d78aE0a633BF044e23c",
       daiContract: "0x451ddD00e28A9631f24505033F1CC07dE89A0C3A",

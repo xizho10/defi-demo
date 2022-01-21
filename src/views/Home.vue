@@ -444,7 +444,7 @@ const getBalanceOf = async (relWeb3: Web3, address: string) => {
       .toFixed(4);
     item.depositBalance = DepositBalance;
     let pendingReward = await InfoContract.methods
-      .getPendingRewardToken(item.index, address)
+      .getPendingRewardToken(item.index)
       .call((err: any, result: any) => {
         if (!err) {
           return result;
@@ -452,7 +452,7 @@ const getBalanceOf = async (relWeb3: Web3, address: string) => {
           return "--";
         }
       });
-    item.pendingReward = new BigNumber(pendingReward)
+    item.pendingReward = new BigNumber(pendingReward.maraAmount)
       .dividedBy(Math.pow(10, 18))
       .toFixed(4);
     let poolInfos = await InfoContract.methods

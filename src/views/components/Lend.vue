@@ -296,6 +296,7 @@ import BUSDTokenAbi from "@/utils/BUSDToken_metadata.abi.json";
 import PoolConfigurationAbi from "@/utils/PoolConfiguration_metadata.abi.json";
 import MockPriceOracleAbi from "@/utils/MockPriceOracle_metadata.abi.json";
 import MaTokenMetadataAbi from "@/utils/MaToken_metadata.abi.json";
+import Erc20Abi from "@/utils/erc20.abi.json";
 const store = useStore();
 
 const {
@@ -305,6 +306,7 @@ const {
   daiContract,
   busdContract,
   oracleContract,
+  maraContract,
 } = store.getters.getGlobalContract;
 
 const columns = [
@@ -330,6 +332,10 @@ const columns = [
   {
     title: "WalletBalance",
     dataIndex: "walletBalance",
+  },
+  {
+    title: "MaraBalance",
+    dataIndex: "maraBalance",
   },
   {
     title: "MyLiquidity",
@@ -504,6 +510,21 @@ const refresh = async () => {
         }
       });
     item.getPoolBalance = resGetPoolBalance;
+    //获取mara余额
+    let MaraContract = new props.relWeb3.eth.Contract(
+      Erc20Abi as any,
+      maraContract
+    );
+    let maraBalance = await MaraContract.methods
+      .balanceOf(props.address)
+      .call((err: any, result: any) => {
+        if (!err) {
+          return result;
+        } else {
+          return "--";
+        }
+      });
+    item.maraBalance = maraBalance;
     //获取钱包代币余额
     let balanceContract = new props.relWeb3.eth.Contract(
       item.abi as any,
