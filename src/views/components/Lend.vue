@@ -25,6 +25,24 @@
           />
         </div>
       </template>
+      <template v-if="column.keys === 'depositReward'">
+        <div>
+          {{
+            new BigNumber(record?.depositReward)
+              .dividedBy(Math.pow(10, 18))
+              .toFixed()
+          }}
+        </div>
+      </template>
+      <template v-if="column.keys === 'borrowReward'">
+        <div>
+          {{
+            new BigNumber(record?.borrowReward)
+              .dividedBy(Math.pow(10, 18))
+              .toFixed()
+          }}
+        </div>
+      </template>
       <template v-if="column.keys === 'APR'">
         <div>
           {{
@@ -81,6 +99,57 @@
     <template #expandedRowRender="{ record }">
       <p style="margin: 0">contractAddress: {{ record?.contract }}</p>
       <p style="margin: 0">maToken: {{ record?.getPoolBalance?.maToken }}</p>
+      <p style="margin: 0">rewardToken: {{ record?.rewardToken }}</p>
+      <p style="margin: 0">
+        userRewardTokenBalance:
+        {{
+          new BigNumber(record?.userRewardTokenBalance)
+            .dividedBy(Math.pow(10, 18))
+            .toFixed()
+        }}
+      </p>
+      <p style="margin: 0">
+        maContractRewardTokenBalance:
+        {{
+          new BigNumber(record?.maContractRewardTokenBalance)
+            .dividedBy(Math.pow(10, 18))
+            .toFixed()
+        }}
+      </p>
+      <div class="spaceSty" />
+      <p style="margin: 0">
+        lendpoolInfoMaraBalance:
+        {{
+          new BigNumber(record?.lendpoolMaraBalance)
+            .dividedBy(Math.pow(10, 18))
+            .toFixed()
+        }}
+      </p>
+      <p style="margin: 0">
+        lendpoolMaraBalance:
+        {{
+          new BigNumber(record?.lendpoolsMaraBalance)
+            .dividedBy(Math.pow(10, 18))
+            .toFixed()
+        }}
+      </p>
+      <p style="margin: 0">
+        maTokenMaraBalance:
+        {{
+          new BigNumber(record?.maTokenMaraBalance)
+            .dividedBy(Math.pow(10, 18))
+            .toFixed()
+        }}
+      </p>
+      <p style="margin: 0">
+        userMaraBalance:
+        {{
+          new BigNumber(record?.maraBalance)
+            .dividedBy(Math.pow(10, 18))
+            .toFixed()
+        }}
+      </p>
+      <div class="spaceSty" />
       <p style="margin: 0">
         multiplier:
         {{ record?.getPoolBalance?.multiplier }}
@@ -123,6 +192,31 @@
             .dividedBy(Math.pow(10, 18))
             .toFixed(4)
         }}
+      </p>
+      <div class="spaceSty" />
+      <p style="margin: 0">
+        liquidityBalance:
+        {{ record?.liquidityBalance }}
+      </p>
+      <p style="margin: 0">
+        borrowBalance:
+        {{ record?.borrowBalance }}
+      </p>
+      <p style="margin: 0">
+        userUsePoolAsCollateral:
+        {{ record?.userUsePoolAsCollateral }}
+      </p>
+      <p style="margin: 0">
+        borrowShares:
+        {{ record?.borrowShares }}
+      </p>
+      <p style="margin: 0">
+        disableUseAsCollateral:
+        {{ record?.disableUseAsCollateral }}
+      </p>
+      <p style="margin: 0">
+        latestMultiplier:
+        {{ record?.latestMultiplier }}
       </p>
       <div class="spaceSty" />
       <p style="margin: 0">
@@ -307,6 +401,7 @@ const {
   busdContract,
   oracleContract,
   maraContract,
+  lendpoolinfoContract,
 } = store.getters.getGlobalContract;
 
 const columns = [
@@ -332,10 +427,6 @@ const columns = [
   {
     title: "WalletBalance",
     dataIndex: "walletBalance",
-  },
-  {
-    title: "MaraBalance",
-    dataIndex: "maraBalance",
   },
   {
     title: "MyLiquidity",
@@ -394,6 +485,11 @@ const Data = [
     userUsePoolAsCollateral: false,
     contract: bnbContract, //BNB合约地址
     abi: BNBTokenAbi,
+    borrowShares: "",
+    disableUseAsCollateral: "",
+    latestMultiplier: "",
+    rewardToken: "",
+    rewardTokenBalance: "",
   },
   {
     key: "DAI",
@@ -410,6 +506,11 @@ const Data = [
     userUsePoolAsCollateral: false,
     contract: daiContract, //DAI合约地址
     abi: DAITokenAbi,
+    borrowShares: "",
+    disableUseAsCollateral: "",
+    latestMultiplier: "",
+    rewardToken: "",
+    rewardTokenBalance: "",
   },
   // {
   //   key: "BUSD",
@@ -426,6 +527,11 @@ const Data = [
   //   userUsePoolAsCollateral: false,
   //   contract: busdContract, //BUSD合约地址
   //   abi: BUSDTokenAbi,
+  //   borrowShares: "",
+  //   disableUseAsCollateral: "",
+  //   latestMultiplier: "",
+  //   rewardToken: "",
+  //   rewardTokenBalance: "",
   // },
 ];
 
@@ -476,6 +582,20 @@ const refresh = async () => {
       .dividedBy(Math.pow(10, 18))
       .toFixed(4);
     item.userUsePoolAsCollateral = res.userUsePoolAsCollateral;
+
+    let userpooldata = await Contract.methods
+      .userPoolData(props.address, item.contract)
+      .call((err: any, result: any) => {
+        if (!err) {
+          return result;
+        } else {
+          return "--";
+        }
+      });
+    item.borrowShares = userpooldata.borrowShares;
+    item.disableUseAsCollateral = userpooldata.disableUseAsCollateral;
+    item.latestMultiplier = userpooldata.latestMultiplier;
+
     let totalLiquidity = await Contract.methods
       .getTotalLiquidity(item.contract)
       .call((err: any, result: any) => {
@@ -510,11 +630,47 @@ const refresh = async () => {
         }
       });
     item.getPoolBalance = resGetPoolBalance;
-    //获取mara余额
     let MaraContract = new props.relWeb3.eth.Contract(
       Erc20Abi as any,
       maraContract
     );
+
+    //获取lendingInfoPool mara余额
+    let lendpoolInfoMaraBalance = await MaraContract.methods
+      .balanceOf(lendpoolinfoContract)
+      .call((err: any, result: any) => {
+        if (!err) {
+          return result;
+        } else {
+          return "--";
+        }
+      });
+    item.lendpoolMaraBalance = lendpoolInfoMaraBalance;
+
+    //获取maToken mara余额
+    let maTokenMaraBalance = await MaraContract.methods
+      .balanceOf(resGetPoolBalance?.maToken)
+      .call((err: any, result: any) => {
+        if (!err) {
+          return result;
+        } else {
+          return "--";
+        }
+      });
+    item.maTokenMaraBalance = maTokenMaraBalance;
+
+    //获取lendingPool mara余额
+    let lendpoolMaraBalance = await MaraContract.methods
+      .balanceOf(lendpoolContract)
+      .call((err: any, result: any) => {
+        if (!err) {
+          return result;
+        } else {
+          return "--";
+        }
+      });
+    item.lendpoolsMaraBalance = lendpoolMaraBalance;
+    //获取mara余额
     let maraBalance = await MaraContract.methods
       .balanceOf(props.address)
       .call((err: any, result: any) => {
@@ -634,7 +790,7 @@ const refresh = async () => {
     item.liquidationBonusPercent = liquidationBonusPercent;
     //获取borrowReward
     let borrowReward = await Contract.methods
-      .calculateReward(lendpoolContract, props.address)
+      .calculateReward(item.contract, props.address)
       .call((err: any, result: any) => {
         if (!err) {
           return result;
@@ -669,6 +825,43 @@ const refresh = async () => {
         }
       });
     item.depositReward = matoken;
+    let rewardToken = await matokenContract.methods
+      .rewardToken()
+      .call((err: any, result: any) => {
+        if (!err) {
+          return result;
+        } else {
+          return "--";
+        }
+      });
+    item.rewardToken = rewardToken;
+    if (rewardToken !== "0x0000000000000000000000000000000000000000") {
+      let balanceContract = new props.relWeb3.eth.Contract(
+        Erc20Abi as any,
+        rewardToken
+      );
+
+      let resBalance = await balanceContract.methods
+        .balanceOf(props.address)
+        .call((err: any, result: any) => {
+          if (!err) {
+            return result;
+          } else {
+            return "--";
+          }
+        });
+      item.userRewardTokenBalance = resBalance;
+      let maContractRewardTokenBalance = await balanceContract.methods
+        .balanceOf(resGetPoolBalance?.maToken)
+        .call((err: any, result: any) => {
+          if (!err) {
+            return result;
+          } else {
+            return "--";
+          }
+        });
+      item.maContractRewardTokenBalance = maContractRewardTokenBalance;
+    }
   }
 };
 
