@@ -288,6 +288,7 @@ import {
   Modal,
   Switch,
 } from "ant-design-vue";
+import _ from "lodash";
 import LendingPoolAbi from "@/utils/LendingPool_metadata.abi.json";
 import BNBTokenAbi from "@/utils/BNBToken_metadata.abi.json";
 import DAITokenAbi from "@/utils/DaiToken_metadata.abi.json";
@@ -404,22 +405,22 @@ const Data = [
     contract: daiContract, //DAI合约地址
     abi: DAITokenAbi,
   },
-  {
-    key: "BUSD",
-    assets: "BUSD",
-    liquidityBalance: 0,
-    APR: 0,
-    borrowBalance: "0",
-    walletBalance: "0",
-    optimalUtilizationRate: "0",
-    totalLiquidity: "0",
-    totalAvailableLiquidity: "0",
-    depoistReward: "0",
-    borrowReward: "0",
-    userUsePoolAsCollateral: false,
-    contract: busdContract, //BUSD合约地址
-    abi: BUSDTokenAbi,
-  },
+  // {
+  //   key: "BUSD",
+  //   assets: "BUSD",
+  //   liquidityBalance: 0,
+  //   APR: 0,
+  //   borrowBalance: "0",
+  //   walletBalance: "0",
+  //   optimalUtilizationRate: "0",
+  //   totalLiquidity: "0",
+  //   totalAvailableLiquidity: "0",
+  //   depoistReward: "0",
+  //   borrowReward: "0",
+  //   userUsePoolAsCollateral: false,
+  //   contract: busdContract, //BUSD合约地址
+  //   abi: BUSDTokenAbi,
+  // },
 ];
 
 const props = defineProps<{
@@ -447,7 +448,7 @@ onMounted(() => {
   refresh();
 });
 const refresh = async () => {
-  data.value = Data;
+  data.value = _.cloneDeep(Data);
   let Contract = new props.relWeb3.eth.Contract(
     LendingPoolAbi as any,
     lendpoolContract

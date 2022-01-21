@@ -82,6 +82,7 @@ import {
   RadioGroup,
   Radio,
 } from "ant-design-vue";
+import _ from "lodash";
 import LendingPoolAbi from "@/utils/LendingPool_metadata.abi.json";
 import BNBTokenAbi from "@/utils/BNBToken_metadata.abi.json";
 import DAITokenAbi from "@/utils/DaiToken_metadata.abi.json";
@@ -227,7 +228,7 @@ onMounted(() => {
 });
 
 const refresh = async () => {
-  data.value = Data;
+  data.value = _.cloneDeep(Data);
   let Contract = new props.relWeb3.eth.Contract(
     LendingPoolAbi as any,
     lendpoolContract

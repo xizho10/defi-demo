@@ -257,6 +257,7 @@ import {
 } from "ant-design-vue";
 import Web3 from "web3";
 import { useStore } from "vuex";
+import _ from "lodash";
 import Liquidation from "@/views/components/Liquidation.vue";
 import Lend from "@/views/components/Lend.vue";
 import Settings from "@/views/components/Settings.vue";
@@ -410,6 +411,7 @@ const farmOrLendOnChange = async (children: any) => {
 
 //Farm fun
 const getBalanceOf = async (relWeb3: Web3, address: string) => {
+  data.value = _.cloneDeep(Data);
   //获取LP balance
   let Contract = new relWeb3.eth.Contract(Erc20Abi as any, lpContract);
   let resBalance = await Contract.methods
