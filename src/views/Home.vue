@@ -256,6 +256,7 @@ import {
   Modal,
 } from "ant-design-vue";
 import Web3 from "web3";
+import { useStore } from "vuex";
 import Liquidation from "@/views/components/Liquidation.vue";
 import Lend from "@/views/components/Lend.vue";
 import Settings from "@/views/components/Settings.vue";
@@ -267,17 +268,18 @@ import Psc from "@/utils/psc.abi.json";
 import InfoAbi from "@/utils/info.abi.json";
 import LendingPoolFarmAbi from "@/utils/lendingPool_mara_farm.abi.json";
 import AlphaReleaseRuleSelectorAbi from "@/utils/AlphaReleaseRuleSelector_metadata.json";
+const store = useStore();
 
-import {
+const {
   lpContract,
   manageContract,
   shareContract,
   pscContract,
   usdaContract,
   infoContract,
-  leadingpoolFarmContract,
+  farmPoolContract,
   alphaReleaseRuleSelectorContract,
-} from "@/utils/config";
+} = store.getters.getGlobalContract;
 
 const columns = [
   {
@@ -319,6 +321,7 @@ const columns = [
 const Data = [
   {
     index: 0,
+    key: 0,
     lpTokenName: "USDT-BUSD",
     share: "0%",
     depositBalance: "0",
@@ -536,7 +539,7 @@ const showBorrowDepositModal = async (item: any) => {
 
   let lendingPoolContract = new relWeb3.value.eth.Contract(
     LendingPoolFarmAbi as any,
-    leadingpoolFarmContract
+    farmPoolContract
   );
   let PscContract = new relWeb3.value.eth.Contract(Psc as any, pscContract, {
     from: address.value,
@@ -1043,7 +1046,7 @@ const BorrowDeposit = async () => {
 
 <style lang="less" scoped>
 .buySellContainer {
-  width: 1280px;
+  width: 1440px;
   display: flex;
   margin: auto;
   min-height: calc(100vh - 120px);

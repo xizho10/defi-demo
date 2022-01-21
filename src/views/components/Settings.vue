@@ -2,9 +2,9 @@
   <div class="about">
     <Tabs defaultActiveKey="1" @change="tabsChange">
       <TabPane tab="ConfigParams" key="1">
-        <Table :columns="contractColumns" :data-source="contractData"></Table>
+        <ConfigParams :relWeb3="relWeb3" :address="address" />
       </TabPane>
-      <TabPane tab="Config" key="2">
+      <TabPane tab="Oracle" key="2">
         <Table :columns="columns" :data-source="data">
           <template #bodyCell="{ column, record }">
             <template v-if="column.keys === 'option'">
@@ -17,6 +17,126 @@
             </template>
           </template>
         </Table>
+      </TabPane>
+      <TabPane tab="Farm" key="3">
+        <div>
+          <Input
+            class="farmInput"
+            placeholder="ERC20_lpToken"
+            :value="farmAddLpToken"
+            @change="(e:any) => (farmAddLpToken = e.target.value)"
+          />
+          <Input
+            class="farmInput"
+            placeholder="uint256_allocPoint"
+            :value="farmAddPoint"
+            @change="(e:any) => (farmAddPoint = e.target.value)"
+          />
+          <Input
+            class="farmInput"
+            placeholder="bool_withUpdate"
+            :value="farmAddBool"
+            @change="(e:any) => (farmAddBool = e.target.value)"
+          />
+          <Input
+            class="farmInput"
+            placeholder="address_farmAddress"
+            :value="farmAddAddress"
+            @change="(e:any) => (farmAddAddress = e.target.value)"
+          />
+          <Button type="primary" size="large" @click="addPool">
+            Add Pool</Button
+          >
+        </div>
+        <div class="spaceSty"></div>
+        <Input
+          class="farmInput"
+          placeholder="uint256 _pid"
+          :value="farmSetAllocPointPid"
+          @change="(e:any) => (farmSetAllocPointPid = e.target.value)"
+        />
+        <Input
+          class="farmInput"
+          placeholder="uint256_allocPoint"
+          :value="farmSetAllocPointPoint"
+          @change="(e:any) => (farmSetAllocPointPoint = e.target.value)"
+        />
+        <Input
+          class="farmInput"
+          placeholder="bool_withUpdate"
+          :value="farmSetAllocPointBool"
+          @change="(e:any) => (farmSetAllocPointBool = e.target.value)"
+        />
+        <Button type="primary" size="large" @click="setAllocPoint">
+          setAllocPoint
+        </Button>
+      </TabPane>
+      <TabPane tab="Lend" key="4">
+        <div>
+          <Input
+            class="farmInput"
+            placeholder="ERC20_lpToken"
+            :value="lendInitPoolToken"
+            @change="(e:any) => (lendInitPoolToken = e.target.value)"
+          />
+          <Input
+            class="farmInput"
+            placeholder="IPoolConfiguration_poolConfig"
+            :value="lendInitPoolConfig"
+            @change="(e:any) => (lendInitPoolConfig = e.target.value)"
+          />
+          <Button type="primary" size="large" @click="initPool">
+            Add Pool
+          </Button>
+        </div>
+        <div class="spaceSty"></div>
+        <div>
+          <Input
+            class="farmInput"
+            placeholder="address"
+            :value="setPoolStatusToken"
+            @change="(e:any) => (setPoolStatusToken = e.target.value)"
+          />
+          <Input
+            class="farmInput"
+            placeholder="uint8"
+            :value="setPoolStatusStatus"
+            @change="(e:any) => (setPoolStatusStatus = e.target.value)"
+          />
+          <Button type="primary" size="large" @click="setPoolStatus">
+            setPoolStatus
+          </Button>
+        </div>
+        <div class="spaceSty"></div>
+        <div>
+          <Input
+            class="farmInput"
+            placeholder="address"
+            :value="setPriceOracleAddress"
+            @change="(e:any) => (setPriceOracleAddress = e.target.value)"
+          />
+          <Button type="primary" size="large" @click="setPriceOracle">
+            setPriceOracle
+          </Button>
+        </div>
+        <div class="spaceSty"></div>
+        <div>
+          <Input
+            class="farmInput"
+            placeholder="ERC20_lpToken"
+            :value="lendWithdrawReserveToken"
+            @change="(e:any) => (lendWithdrawReserveToken = e.target.value)"
+          />
+          <Input
+            class="farmInput"
+            placeholder="uint256 _amount"
+            :value="lendWithdrawReserveAmount"
+            @change="(e:any) => (lendWithdrawReserveAmount = e.target.value)"
+          />
+          <Button type="primary" size="large" @click="withdrawReserve">
+            withdrawReserve
+          </Button>
+        </div>
       </TabPane>
     </Tabs>
   </div>
@@ -41,26 +161,34 @@
 
 <script lang="ts" setup>
 import { ref, onMounted } from "vue";
+import { useStore } from "vuex";
 import BigNumber from "bignumber.js";
-import { Button, Table, message, Modal, Tabs, TabPane } from "ant-design-vue";
 import {
-  lpContract,
-  manageContract,
-  shareContract,
-  pscContract,
-  usdaContract,
-  infoContract,
-  leadingpoolFarmContract,
-  leadingpoolContract,
-  bnbContract,
-  daiContract,
-  busdContract,
-  alphaReleaseRuleSelectorContract,
-  oracleContract,
-} from "@/utils/config";
+  Button,
+  Table,
+  message,
+  Modal,
+  Tabs,
+  TabPane,
+  Input,
+} from "ant-design-vue";
+const store = useStore();
 import BNBTokenAbi from "@/utils/BNBToken_metadata.abi.json";
 import DAITokenAbi from "@/utils/DaiToken_metadata.abi.json";
 import MockPriceOracleAbi from "@/utils/MockPriceOracle_metadata.abi.json";
+import LendingPoolAbi from "@/utils/LendingPool_metadata.abi.json";
+import InfoAbi from "@/utils/info.abi.json";
+import ManageAbi from "@/utils/manageAbi.abi.json";
+import ConfigParams from "@/views/components/ConfigParams.vue";
+
+const {
+  manageContract,
+  infoContract,
+  leadingpoolContract,
+  bnbContract,
+  daiContract,
+  oracleContract,
+} = store.getters.getGlobalContract;
 
 const props = defineProps<{
   relWeb3: any;
@@ -103,78 +231,29 @@ const Data = [
   },
 ];
 
-const contractColumns = [
-  {
-    title: "Contract Title",
-    dataIndex: "title",
-    keys: "title",
-  },
-  {
-    title: "Address",
-    dataIndex: "contract",
-    keys: "contract",
-  },
-];
-
-const contractData = [
-  {
-    title: "lpContract",
-    contract: lpContract,
-  },
-  {
-    title: "manageContract",
-    contract: manageContract,
-  },
-  {
-    title: "shareContract",
-    contract: shareContract,
-  },
-  {
-    title: "pscContract",
-    contract: pscContract,
-  },
-  {
-    title: "usdaContract",
-    contract: usdaContract,
-  },
-  {
-    title: "infoContract",
-    contract: infoContract,
-  },
-  {
-    title: "leadingpoolFarmContract",
-    contract: leadingpoolFarmContract,
-  },
-  {
-    title: "leadingpoolContract",
-    contract: leadingpoolContract,
-  },
-  {
-    title: "bnbContract",
-    contract: bnbContract,
-  },
-  {
-    title: "daiContract",
-    contract: daiContract,
-  },
-  {
-    title: "busdContract",
-    contract: busdContract,
-  },
-  {
-    title: "alphaReleaseRuleSelectorContract",
-    contract: alphaReleaseRuleSelectorContract,
-  },
-  {
-    title: "oracleContract",
-    contract: oracleContract,
-  },
-];
-
 const data = ref<any>(Data);
 const Visible = ref<boolean>(false);
 const assetPrice = ref<string | number>("");
 const chooseItem = ref<any>({});
+
+const farmAddLpToken = ref<any>("");
+const farmAddPoint = ref<any>("");
+const farmAddBool = ref<any>("");
+const farmAddAddress = ref<any>("");
+
+const farmSetAllocPointPid = ref<any>("");
+const farmSetAllocPointPoint = ref<any>("");
+const farmSetAllocPointBool = ref<any>("");
+
+const lendInitPoolToken = ref<any>("");
+const lendInitPoolConfig = ref<any>("");
+
+const lendWithdrawReserveToken = ref<any>("");
+const lendWithdrawReserveAmount = ref<any>("");
+
+const setPoolStatusToken = ref<any>("");
+const setPoolStatusStatus = ref<any>("");
+const setPriceOracleAddress = ref<any>("");
 
 onMounted(() => {
   refresh();
@@ -236,7 +315,175 @@ const Confirm = async () => {
       {
         from: props.address,
         gasPrice: gasPrice,
-        gas: props.relWeb3.utils.toHex(900000),
+        gas: props.relWeb3.utils.toHex(3000000),
+      },
+      (err: any, result: any) => {
+        Visible.value = false;
+        if (!err) {
+          return result;
+        } else {
+          message.error(JSON.stringify(err.message));
+          return "--";
+        }
+      }
+    );
+};
+
+const addPool = async () => {
+  let gasPrice = await props.relWeb3.eth.getGasPrice(); //获取当前gas价格
+  let InfoContract = new props.relWeb3.eth.Contract(
+    InfoAbi as any,
+    infoContract
+  );
+  await InfoContract.methods
+    .add(
+      farmAddLpToken.value,
+      farmAddPoint.value,
+      farmAddBool.value,
+      farmAddAddress.value
+    )
+    .send(
+      {
+        from: props.address,
+        gasPrice: gasPrice,
+        gas: props.relWeb3.utils.toHex(3000000),
+      },
+      (err: any, result: any) => {
+        Visible.value = false;
+        if (!err) {
+          return result;
+        } else {
+          message.error(JSON.stringify(err.message));
+          return "--";
+        }
+      }
+    );
+};
+
+const setAllocPoint = async () => {
+  let gasPrice = await props.relWeb3.eth.getGasPrice(); //获取当前gas价格
+  let ManageContract = new props.relWeb3.eth.Contract(
+    ManageAbi as any,
+    manageContract
+  );
+  await ManageContract.methods
+    .setAllocPoint(
+      farmSetAllocPointPid.value,
+      farmSetAllocPointPoint.value,
+      farmSetAllocPointBool.value
+    )
+    .send(
+      {
+        from: props.address,
+        gasPrice: gasPrice,
+        gas: props.relWeb3.utils.toHex(3000000),
+      },
+      (err: any, result: any) => {
+        Visible.value = false;
+        if (!err) {
+          return result;
+        } else {
+          message.error(JSON.stringify(err.message));
+          return "--";
+        }
+      }
+    );
+};
+
+const initPool = async () => {
+  let lendPoolContract = new props.relWeb3.eth.Contract(
+    LendingPoolAbi as any,
+    leadingpoolContract
+  );
+  let gasPrice = await props.relWeb3.eth.getGasPrice(); //获取当前gas价格
+  await lendPoolContract.methods
+    .initPool(lendInitPoolToken.value, lendInitPoolConfig.value)
+    .send(
+      {
+        from: props.address,
+        gasPrice: gasPrice,
+        gas: props.relWeb3.utils.toHex(3000000),
+      },
+      (err: any, result: any) => {
+        Visible.value = false;
+        if (!err) {
+          return result;
+        } else {
+          message.error(JSON.stringify(err.message));
+          return "--";
+        }
+      }
+    );
+};
+
+const withdrawReserve = async () => {
+  let lendPoolContract = new props.relWeb3.eth.Contract(
+    LendingPoolAbi as any,
+    leadingpoolContract
+  );
+  let gasPrice = await props.relWeb3.eth.getGasPrice(); //获取当前gas价格
+  await lendPoolContract.methods
+    .withdrawReserve(
+      lendWithdrawReserveToken.value,
+      lendWithdrawReserveAmount.value
+    )
+    .send(
+      {
+        from: props.address,
+        gasPrice: gasPrice,
+        gas: props.relWeb3.utils.toHex(3000000),
+      },
+      (err: any, result: any) => {
+        Visible.value = false;
+        if (!err) {
+          return result;
+        } else {
+          message.error(JSON.stringify(err.message));
+          return "--";
+        }
+      }
+    );
+};
+
+const setPoolStatus = async () => {
+  let lendPoolContract = new props.relWeb3.eth.Contract(
+    LendingPoolAbi as any,
+    leadingpoolContract
+  );
+  let gasPrice = await props.relWeb3.eth.getGasPrice(); //获取当前gas价格
+  await lendPoolContract.methods
+    .setPoolStatus(setPoolStatusToken.value, setPoolStatusStatus.value)
+    .send(
+      {
+        from: props.address,
+        gasPrice: gasPrice,
+        gas: props.relWeb3.utils.toHex(3000000),
+      },
+      (err: any, result: any) => {
+        Visible.value = false;
+        if (!err) {
+          return result;
+        } else {
+          message.error(JSON.stringify(err.message));
+          return "--";
+        }
+      }
+    );
+};
+
+const setPriceOracle = async () => {
+  let lendPoolContract = new props.relWeb3.eth.Contract(
+    LendingPoolAbi as any,
+    leadingpoolContract
+  );
+  let gasPrice = await props.relWeb3.eth.getGasPrice(); //获取当前gas价格
+  await lendPoolContract.methods
+    .setPriceOracle(setPriceOracleAddress.value)
+    .send(
+      {
+        from: props.address,
+        gasPrice: gasPrice,
+        gas: props.relWeb3.utils.toHex(3000000),
       },
       (err: any, result: any) => {
         Visible.value = false;
@@ -257,6 +504,11 @@ const Confirm = async () => {
 }
 .amountInput {
   width: 100%;
+}
+.farmInput {
+  width: 300px;
+  margin-right: 20px;
+  height: 46px;
 }
 .spaceSty {
   margin-bottom: 20px;

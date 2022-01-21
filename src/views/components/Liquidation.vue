@@ -72,6 +72,7 @@
 
 <script lang="ts" setup>
 import { ref, onMounted } from "vue";
+import { useStore } from "vuex";
 import BigNumber from "bignumber.js";
 import {
   Button,
@@ -84,13 +85,11 @@ import {
 import LendingPoolAbi from "@/utils/LendingPool_metadata.abi.json";
 import BNBTokenAbi from "@/utils/BNBToken_metadata.abi.json";
 import DAITokenAbi from "@/utils/DaiToken_metadata.abi.json";
-import {
-  leadingpoolContract,
-  bnbContract,
-  daiContract,
-  oracleContract,
-} from "@/utils/config";
 import MockPriceOracleAbi from "@/utils/MockPriceOracle_metadata.abi.json";
+const store = useStore();
+
+const { leadingpoolContract, bnbContract, daiContract, oracleContract } =
+  store.getters.getGlobalContract;
 
 const props = defineProps<{
   relWeb3: any;
@@ -349,12 +348,6 @@ const Approve = async () => {
     chooseItem.value.abi as any,
     chooseItem.value.contract
   );
-  console.log(
-    "approve Amount",
-    new BigNumber(liquidateAmount.value)
-      .multipliedBy(Math.pow(10, 18))
-      .toFixed()
-  );
   approveContract.methods
     .approve(
       leadingpoolContract,
@@ -371,12 +364,6 @@ const Approve = async () => {
     });
 };
 const LiquidateConfirm = async () => {
-  console.log(
-    "confirm",
-    new BigNumber(liquidateSharesAmount.value)
-      .multipliedBy(Math.pow(10, 18))
-      .toFixed()
-  );
   let lendingPoolContract = new props.relWeb3.eth.Contract(
     LendingPoolAbi as any,
     leadingpoolContract

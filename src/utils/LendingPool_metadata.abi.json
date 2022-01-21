@@ -2,8 +2,8 @@
   {
     "inputs": [
       {
-        "internalType": "contract AlTokenDeployer",
-        "name": "_alTokenDeployer",
+        "internalType": "contract MaTokenDeployer",
+        "name": "_maTokenDeployer",
         "type": "address"
       }
     ],
@@ -177,7 +177,7 @@
       {
         "indexed": true,
         "internalType": "address",
-        "name": "alTokenAddress",
+        "name": "maTokenAddress",
         "type": "address"
       },
       {
@@ -374,13 +374,47 @@
     "type": "function"
   },
   {
-    "inputs": [],
-    "name": "alTokenDeployer",
-    "outputs": [
+    "inputs": [
       {
-        "internalType": "contract AlTokenDeployer",
+        "internalType": "address",
+        "name": "_mara",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "_token",
+        "type": "address"
+      },
+      {
+        "internalType": "bool",
+        "name": "_canBorrow",
+        "type": "bool"
+      }
+    ],
+    "name": "addAuthorizedBorrow",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
         "name": "",
         "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "name": "authorizedBorrow",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
       }
     ],
     "stateMutability": "view",
@@ -412,12 +446,35 @@
         "type": "address"
       },
       {
+        "internalType": "uint256",
+        "name": "_amount",
+        "type": "uint256"
+      },
+      {
+        "internalType": "address",
+        "name": "_user",
+        "type": "address"
+      }
+    ],
+    "name": "borrow",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "contract ERC20",
+        "name": "_token",
+        "type": "address"
+      },
+      {
         "internalType": "address",
         "name": "_account",
         "type": "address"
       }
     ],
-    "name": "calculateAlphaReward",
+    "name": "calculateReward",
     "outputs": [
       {
         "internalType": "uint256",
@@ -429,8 +486,14 @@
     "type": "function"
   },
   {
-    "inputs": [],
-    "name": "claimAlpha",
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "_token",
+        "type": "address"
+      }
+    ],
+    "name": "claim",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -454,19 +517,6 @@
     "type": "function"
   },
   {
-    "inputs": [],
-    "name": "distributor",
-    "outputs": [
-      {
-        "internalType": "contract IAlphaDistributor",
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
     "inputs": [
       {
         "internalType": "contract ERC20",
@@ -483,7 +533,7 @@
       },
       {
         "internalType": "address",
-        "name": "alTokenAddress",
+        "name": "maTokenAddress",
         "type": "address"
       },
       {
@@ -707,6 +757,19 @@
     "type": "function"
   },
   {
+    "inputs": [],
+    "name": "lendingPoolInfo",
+    "outputs": [
+      {
+        "internalType": "contract ILendingPoolInfo",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
     "inputs": [
       {
         "internalType": "address",
@@ -732,6 +795,19 @@
     "name": "liquidate",
     "outputs": [],
     "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "maTokenDeployer",
+    "outputs": [
+      {
+        "internalType": "contract MaTokenDeployer",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
     "type": "function"
   },
   {
@@ -763,8 +839,8 @@
         "type": "uint8"
       },
       {
-        "internalType": "contract AlToken",
-        "name": "alToken",
+        "internalType": "contract MaToken",
+        "name": "maToken",
         "type": "address"
       },
       {
@@ -794,12 +870,12 @@
       },
       {
         "internalType": "uint256",
-        "name": "totalAlphaTokenReward",
+        "name": "totalTokenReward",
         "type": "uint256"
       },
       {
         "internalType": "uint256",
-        "name": "alphaMultiplier",
+        "name": "multiplier",
         "type": "uint256"
       }
     ],
@@ -814,7 +890,7 @@
         "type": "uint256"
       }
     ],
-    "name": "receiveAlpha",
+    "name": "receiveToken",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -878,12 +954,12 @@
   {
     "inputs": [
       {
-        "internalType": "contract IAlphaDistributor",
-        "name": "_distributor",
+        "internalType": "contract ILendingPoolInfo",
+        "name": "_lendingPoolInfo",
         "type": "address"
       }
     ],
-    "name": "setDistributor",
+    "name": "setLendingPoolInfo",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -971,12 +1047,12 @@
   {
     "inputs": [
       {
-        "internalType": "contract IVestingAlpha",
-        "name": "_vestingAlpha",
+        "internalType": "contract IVesting",
+        "name": "_vesting",
         "type": "address"
       }
     ],
-    "name": "setVestingAlpha",
+    "name": "setVesting",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -1059,7 +1135,7 @@
       },
       {
         "internalType": "uint256",
-        "name": "latestAlphaMultiplier",
+        "name": "latestMultiplier",
         "type": "uint256"
       }
     ],
@@ -1068,10 +1144,10 @@
   },
   {
     "inputs": [],
-    "name": "vestingAlpha",
+    "name": "vesting",
     "outputs": [
       {
-        "internalType": "contract IVestingAlpha",
+        "internalType": "contract IVesting",
         "name": "",
         "type": "address"
       }

@@ -21,4 +21,41 @@ const getLiquidationList = () => {
   });
 };
 
-export { getDepositList, getWithdrawList, getLiquidationList };
+const getLendingPools = () => {
+  return axios({
+    method: "get",
+    url: "http://data.papayalend.com/api/v1/lending/pools",
+  });
+};
+
+const getLendingUsers = () => {
+  return axios({
+    method: "get",
+    url: "http://data.papayalend.com/api/v1/lending/users",
+  });
+};
+
+const getLendingPoolsEvents = (params: any) => {
+  return axios({
+    method: "get",
+    url: "http://data.papayalend.com/api/v1/lending/events",
+    params,
+  });
+};
+
+const getLiquidation = () => {
+  return axios({
+    method: "get",
+    url: "http://data.papayalend.com/api/v1/liquidation",
+  });
+};
+
+export {
+  getDepositList,
+  getWithdrawList,
+  getLiquidationList,
+  getLendingPools,
+  getLendingUsers,
+  getLendingPoolsEvents,
+  getLiquidation,
+};

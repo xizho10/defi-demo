@@ -12,7 +12,7 @@
       <div>--</div>
     </div>
   </div>
-  <Table :columns="columns" :data-source="data">
+  <Table :columns="columns" :data-source="data" :scroll="{ x: 1440 }">
     <template #bodyCell="{ column, record }">
       <template v-if="column.keys === 'userUsePoolAsCollateral'">
         <div>
@@ -25,9 +25,14 @@
       <template v-if="column.keys === 'APR'">
         <div>
           {{
-            new BigNumber(record?.APR).dividedBy(Math.pow(10, 16)).toFixed(4)
+            new BigNumber(record?.APR).dividedBy(Math.pow(10, 16)).toFixed(2)
           }}%
         </div>
+      </template>
+      <template v-if="column.keys === 'claim'">
+        <Button type="primary" size="large" @click="() => claim()">
+          claim
+        </Button>
       </template>
       <template v-if="column.keys === 'liquidityOperation'">
         <Space :size="10">
@@ -72,10 +77,10 @@
     </template>
     <template #expandedRowRender="{ record }">
       <p style="margin: 0">contractAddress: {{ record?.contract }}</p>
-      <p style="margin: 0">alToken: {{ record?.getPoolBalance?.alToken }}</p>
+      <p style="margin: 0">maToken: {{ record?.getPoolBalance?.maToken }}</p>
       <p style="margin: 0">
-        alphaMultiplier:
-        {{ record?.getPoolBalance?.alphaMultiplier }}
+        multiplier:
+        {{ record?.getPoolBalance?.multiplier }}
       </p>
       <p style="margin: 0">
         lastUpdateTimestamp:
@@ -93,9 +98,9 @@
         {{ record?.getPoolBalance?.status }}
       </p>
       <p style="margin: 0">
-        totalAlphaTokenReward:
+        totalTokenReward:
         {{
-          new BigNumber(record?.getPoolBalance?.totalAlphaTokenReward)
+          new BigNumber(record?.getPoolBalance?.totalTokenReward)
             .dividedBy(Math.pow(10, 18))
             .toFixed(4)
         }}
@@ -269,6 +274,7 @@
 
 <script lang="ts" setup>
 import { ref, onMounted } from "vue";
+import { useStore } from "vuex";
 import BigNumber from "bignumber.js";
 import {
   Button,
@@ -279,20 +285,24 @@ import {
   Modal,
   Switch,
 } from "ant-design-vue";
-import {
-  usdaContract,
-  leadingpoolContract,
-  bnbContract,
-  daiContract,
-  busdContract,
-  oracleContract,
-} from "@/utils/config";
 import LendingPoolAbi from "@/utils/LendingPool_metadata.abi.json";
 import BNBTokenAbi from "@/utils/BNBToken_metadata.abi.json";
 import DAITokenAbi from "@/utils/DaiToken_metadata.abi.json";
 import BUSDTokenAbi from "@/utils/BUSDToken_metadata.abi.json";
 import PoolConfigurationAbi from "@/utils/PoolConfiguration_metadata.abi.json";
 import MockPriceOracleAbi from "@/utils/MockPriceOracle_metadata.abi.json";
+import MaTokenMetadataAbi from "@/utils/MaToken_metadata.abi.json";
+const store = useStore();
+
+const {
+  usdaContract,
+  leadingpoolContract,
+  bnbContract,
+  daiContract,
+  busdContract,
+  oracleContract,
+} = store.getters.getGlobalContract;
+
 const columns = [
   {
     title: "Assets",
@@ -309,7 +319,7 @@ const columns = [
     dataIndex: "totalLiquidity",
   },
   {
-    title: "TotalAvailableLiquidity",
+    title: "Liquidity	",
     keys: "totalAvailableLiquidity",
     dataIndex: "totalAvailableLiquidity",
   },
@@ -318,9 +328,24 @@ const columns = [
     dataIndex: "walletBalance",
   },
   {
-    title: "LiquidityBalance",
+    title: "MyLiquidity",
     keys: "liquidityBalance",
     dataIndex: "liquidityBalance",
+  },
+  {
+    title: "DepositReward",
+    keys: "depositReward",
+    dataIndex: "depositReward",
+  },
+  {
+    title: "BorrowReward",
+    keys: "borrowReward",
+    dataIndex: "borrowReward",
+  },
+  {
+    title: "Claim",
+    keys: "claim",
+    dataIndex: "claim",
   },
   {
     title: "LiquidityOperation",
@@ -328,12 +353,12 @@ const columns = [
     dataIndex: "LiquidityOperation",
   },
   {
-    title: "BorrowBalance",
+    title: "MyBorrow",
     keys: "borrowBalance",
     dataIndex: "borrowBalance",
   },
   {
-    title: "UserUsePoolAsCollateral",
+    title: "Collateral",
     keys: "userUsePoolAsCollateral",
     dataIndex: "userUsePoolAsCollateral",
   },
@@ -354,6 +379,8 @@ const Data = [
     optimalUtilizationRate: "0",
     totalLiquidity: "0",
     totalAvailableLiquidity: "0",
+    depoistReward: "0",
+    borrowReward: "0",
     userUsePoolAsCollateral: false,
     contract: bnbContract, //BNB合约地址
     abi: BNBTokenAbi,
@@ -368,6 +395,8 @@ const Data = [
     optimalUtilizationRate: "0",
     totalLiquidity: "0",
     totalAvailableLiquidity: "0",
+    depoistReward: "0",
+    borrowReward: "0",
     userUsePoolAsCollateral: false,
     contract: daiContract, //DAI合约地址
     abi: DAITokenAbi,
@@ -382,6 +411,8 @@ const Data = [
     optimalUtilizationRate: "0",
     totalLiquidity: "0",
     totalAvailableLiquidity: "0",
+    depoistReward: "0",
+    borrowReward: "0",
     userUsePoolAsCollateral: false,
     contract: busdContract, //BUSD合约地址
     abi: BUSDTokenAbi,
@@ -586,6 +617,32 @@ const refresh = async () => {
         }
       });
     item.liquidationBonusPercent = liquidationBonusPercent;
+    //获取matoken
+    let matokenContract = new props.relWeb3.eth.Contract(
+      MaTokenMetadataAbi as any,
+      resGetPoolBalance.maToken
+    );
+    let matoken = await matokenContract.methods
+      .calculateReward(props.address)
+      .call((err: any, result: any) => {
+        if (!err) {
+          return result;
+        } else {
+          return "--";
+        }
+      });
+    item.depositReward = matoken;
+    //获取borrowReward
+    let borrowReward = await Contract.methods
+      .calculateReward(leadingpoolContract, props.address)
+      .call((err: any, result: any) => {
+        if (!err) {
+          return result;
+        } else {
+          return "--";
+        }
+      });
+    item.borrowReward = borrowReward;
   }
 };
 
@@ -672,6 +729,30 @@ const borrowerModalHandleOk = () => {
 
 const borrowModalHandleCancel = () => {
   borrowVisible.value = false;
+};
+
+//claim
+const claim = async () => {
+  let lendingPoolContract = new props.relWeb3.eth.Contract(
+    LendingPoolAbi as any,
+    leadingpoolContract
+  );
+  let gasPrice = await props.relWeb3.eth.getGasPrice(); //获取当前gas价格
+  await lendingPoolContract.methods.claimAlpha().send(
+    {
+      from: props.address,
+      gasPrice: gasPrice,
+      gas: props.relWeb3.utils.toHex(900000),
+    },
+    (err: any, result: any) => {
+      if (!err) {
+        return result;
+      } else {
+        message.error(JSON.stringify(err.message));
+        return "--";
+      }
+    }
+  );
 };
 
 //打开withdraw弹框
