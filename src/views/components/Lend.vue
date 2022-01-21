@@ -447,6 +447,7 @@ onMounted(() => {
   refresh();
 });
 const refresh = async () => {
+  data.value = Data;
   let Contract = new props.relWeb3.eth.Contract(
     LendingPoolAbi as any,
     lendpoolContract
@@ -637,7 +638,7 @@ const refresh = async () => {
       resGetPoolBalance.maToken
     );
     let matoken = await matokenContract.methods
-      .calculateReward(props.address)
+      .calculateMaraReward(props.address)
       .call((err: any, result: any) => {
         if (!err) {
           return result;

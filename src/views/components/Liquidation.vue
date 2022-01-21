@@ -190,6 +190,26 @@ const Data = [
     assetPrice: "0",
     rate: "0",
   },
+  {
+    address: "0x96a424E5D342e1a57435080Ab0d128EaE2dBa6c6",
+    coin: "BNB",
+    contract: bnbContract,
+    abi: BNBTokenAbi,
+    cannotLiquidation: true,
+    liquidityBalance: "0",
+    assetPrice: "0",
+    rate: "0",
+  },
+  {
+    address: "0x96a424E5D342e1a57435080Ab0d128EaE2dBa6c6",
+    coin: "DAI",
+    contract: daiContract,
+    abi: DAITokenAbi,
+    cannotLiquidation: true,
+    liquidityBalance: "0",
+    assetPrice: "0",
+    rate: "0",
+  },
 ];
 const data = ref<any>(Data);
 const liquidityVisible = ref<boolean>(false);
