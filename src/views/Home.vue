@@ -388,6 +388,9 @@ const connectClick = () => {
 
 //Lend fun
 const farmOrLendOnChange = async (children: any) => {
+  if (children === "1") {
+    getBalanceOf(relWeb3.value, address.value);
+  }
   if (children === "4") {
     let Contract = new relWeb3.value.eth.Contract(
       AlphaReleaseRuleSelectorAbi as any,
@@ -605,7 +608,7 @@ const BorrowDepositModalHandleCancel = () => {
   borrowDepositVisible.value = false;
 };
 
-const approve = (item: any) => {
+const approve = () => {
   let Contract = new relWeb3.value.eth.Contract(Erc20Abi as any, lpContract, {
     from: address.value,
   });
@@ -624,7 +627,7 @@ const approve = (item: any) => {
     });
 };
 
-const deposit = async (item: any) => {
+const deposit = async () => {
   let Contract = new relWeb3.value.eth.Contract(
     ManageAbi as any,
     manageContract,
@@ -636,7 +639,7 @@ const deposit = async (item: any) => {
   //deposit参数: 1.第0个币种,2.金额
   Contract.methods
     .deposit(
-      item.index,
+      chooseItem.value.index,
       new BigNumber(amount.value).multipliedBy(Math.pow(10, 18)).toFixed()
     )
     .send(
@@ -646,6 +649,7 @@ const deposit = async (item: any) => {
         gas: relWeb3.value.utils.toHex(900000),
       },
       (err: any, result: any) => {
+        depositVisible.value = false;
         if (err) {
           message.error(JSON.stringify(err.message));
         } else {
@@ -708,7 +712,7 @@ const withdraw = async () => {
   //withdraw参数: 1.第0个币种,2.金额
   Contract.methods
     .withdraw(
-      chooseItem.value.item,
+      chooseItem.value.index,
       new BigNumber(withdrawAmount.value)
         .multipliedBy(Math.pow(10, 18))
         .toFixed()
@@ -720,6 +724,7 @@ const withdraw = async () => {
         gas: relWeb3.value.utils.toHex(900000),
       },
       (err: any, result: any) => {
+        withdrawVisible.value = false;
         if (err) {
           message.error(JSON.stringify(err.message));
         } else {

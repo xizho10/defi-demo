@@ -12,6 +12,9 @@
       <div>--</div>
     </div>
   </div>
+  <Button type="primary" size="large" @click="refresh" class="refresh"
+    >Refresh</Button
+  >
   <Table :columns="columns" :data-source="data" :scroll="{ x: 1440 }">
     <template #bodyCell="{ column, record }">
       <template v-if="column.keys === 'userUsePoolAsCollateral'">
@@ -551,17 +554,6 @@ const refresh = async () => {
       });
     item.APR = rate;
     item.utilizationRate = utilizationRate;
-    //获取optimalUtilizationRate
-    let optimalUtilizationRate = await poolConfigContract.methods
-      .getOptimalUtilizationRate()
-      .call((err: any, result: any) => {
-        if (!err) {
-          return result;
-        } else {
-          return "--";
-        }
-      });
-    item.optimalUtilizationRate = optimalUtilizationRate;
     //获取baseBorrowRate
     let baseBorrowRate = await poolConfigContract.methods
       .baseBorrowRate()
@@ -617,6 +609,28 @@ const refresh = async () => {
         }
       });
     item.liquidationBonusPercent = liquidationBonusPercent;
+    //获取borrowReward
+    let borrowReward = await Contract.methods
+      .calculateReward(lendpoolContract, props.address)
+      .call((err: any, result: any) => {
+        if (!err) {
+          return result;
+        } else {
+          return "--";
+        }
+      });
+    item.borrowReward = borrowReward;
+    //获取optimalUtilizationRate
+    let optimalUtilizationRate = await poolConfigContract.methods
+      .getOptimalUtilizationRate()
+      .call((err: any, result: any) => {
+        if (!err) {
+          return result;
+        } else {
+          return "--";
+        }
+      });
+    item.optimalUtilizationRate = optimalUtilizationRate;
     //获取matoken
     let matokenContract = new props.relWeb3.eth.Contract(
       MaTokenMetadataAbi as any,
@@ -632,17 +646,6 @@ const refresh = async () => {
         }
       });
     item.depositReward = matoken;
-    //获取borrowReward
-    let borrowReward = await Contract.methods
-      .calculateReward(lendpoolContract, props.address)
-      .call((err: any, result: any) => {
-        if (!err) {
-          return result;
-        } else {
-          return "--";
-        }
-      });
-    item.borrowReward = borrowReward;
   }
 };
 
@@ -738,7 +741,7 @@ const claim = async () => {
     lendpoolContract
   );
   let gasPrice = await props.relWeb3.eth.getGasPrice(); //获取当前gas价格
-  await lendingPoolContract.methods.claimAlpha().send(
+  await lendingPoolContract.methods.claim(lendpoolContract).send(
     {
       from: props.address,
       gasPrice: gasPrice,
@@ -1002,5 +1005,8 @@ const lendRepay = async () => {
 .spaceSty {
   height: 20px;
   width: 100%;
+}
+.refresh {
+  margin-bottom: 20px;
 }
 </style>
