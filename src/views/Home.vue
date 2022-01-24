@@ -216,7 +216,7 @@
     </div>
     <div>Borrow Token:</div>
     <RadioGroup v-model:value="borrowToken">
-      <Radio :value="usdaContract">USDT</Radio>
+      <Radio :value="usdaContract.value">USDT</Radio>
     </RadioGroup>
     <div class="spaceSty" />
     <div>max borrow: {{ maxBorrow }}(USDT)</div>
@@ -269,18 +269,20 @@ import Psc from "@/utils/psc.abi.json";
 import InfoAbi from "@/utils/info.abi.json";
 import LendingPoolFarmAbi from "@/utils/lendingPool_mara_farm.abi.json";
 import AlphaReleaseRuleSelectorAbi from "@/utils/AlphaReleaseRuleSelector_metadata.json";
+import { getContracts } from "@/utils/api";
 const store = useStore();
 
-const {
-  lpContract,
-  manageContract,
-  shareContract,
-  pscContract,
-  usdaContract,
-  infoContract,
-  farmPoolContract,
-  alphaReleaseRuleSelectorContract,
-} = store.getters.getGlobalContract;
+const getGlobalContract = store.getters.getGlobalContract;
+const lpContract = ref(getGlobalContract.lpContract);
+const manageContract = ref(getGlobalContract.manageContract);
+const shareContract = ref(getGlobalContract.shareContract);
+const pscContract = ref(getGlobalContract.pscContract);
+const usdaContract = ref(getGlobalContract.usdaContract);
+const infoContract = ref(getGlobalContract.infoContract);
+const farmPoolContract = ref(getGlobalContract.farmPoolContract);
+const alphaReleaseRuleSelectorContract = ref(
+  getGlobalContract.alphaReleaseRuleSelectorContract
+);
 
 const columns = [
   {
@@ -327,7 +329,7 @@ const Data = [
     share: "0%",
     depositBalance: "0",
     poolInfos: {},
-    borrowToken: usdaContract,
+    borrowToken: usdaContract.value,
   },
 ];
 
@@ -355,7 +357,7 @@ const liquidateAddress = ref<string | number>("");
 const cycle = ref<string | number>("");
 
 const alpBalance = ref<string | number>("0");
-const borrowToken = ref<string | number>(usdaContract);
+const borrowToken = ref<string | number>(usdaContract.value);
 const BorrowDepositAmount = ref<string | number>("");
 const maxBorrow = ref<string | number>("--");
 const canBorrow = ref<string | number>("--");
@@ -379,6 +381,41 @@ const connectClick = () => {
     .requestAccounts()
     .then(async (res: any) => {
       address.value = res[0];
+      getContracts().then(async (response) => {
+        let res = response.data.result;
+        if (res.records) {
+          res.records.map((item: any) => {
+            switch (item.name) {
+              case "lpContract":
+                lpContract.value = item.address;
+                break;
+              case "manageContract":
+                manageContract.value = item.address;
+                break;
+              case "shareContract":
+                shareContract.value = item.address;
+                break;
+              case "pscContract":
+                pscContract.value = item.address;
+                break;
+              case "usdaContract":
+                usdaContract.value = item.address;
+                break;
+              case "infoContract":
+                infoContract.value = item.address;
+                break;
+              case "farmPoolContract":
+                farmPoolContract.value = item.address;
+                break;
+              case "alphaReleaseRuleSelectorContract":
+                alphaReleaseRuleSelectorContract.value = item.address;
+                break;
+            }
+          });
+          getBalanceOf(RelWeb3, address.value);
+          showCoinBtn.value = true;
+        }
+      });
       getBalanceOf(RelWeb3, address.value);
       showCoinBtn.value = true;
     })
@@ -395,7 +432,7 @@ const farmOrLendOnChange = async (children: any) => {
   if (children === "4") {
     let Contract = new relWeb3.value.eth.Contract(
       AlphaReleaseRuleSelectorAbi as any,
-      alphaReleaseRuleSelectorContract
+      alphaReleaseRuleSelectorContract.value
     );
     let res = await Contract.methods
       .getreceiverRuleListLength()
@@ -413,7 +450,7 @@ const farmOrLendOnChange = async (children: any) => {
 const getBalanceOf = async (relWeb3: Web3, address: string) => {
   data.value = _.cloneDeep(Data);
   //获取LP balance
-  let Contract = new relWeb3.eth.Contract(Erc20Abi as any, lpContract);
+  let Contract = new relWeb3.eth.Contract(Erc20Abi as any, lpContract.value);
   let resBalance = await Contract.methods
     .balanceOf(address)
     .call((err: any, result: any) => {
@@ -428,7 +465,10 @@ const getBalanceOf = async (relWeb3: Web3, address: string) => {
     .toFixed(4);
   balance.value = Balance;
 
-  let InfoContract = new relWeb3.eth.Contract(InfoAbi as any, infoContract);
+  let InfoContract = new relWeb3.eth.Contract(
+    InfoAbi as any,
+    infoContract.value
+  );
   for (let item of data.value) {
     let resDepositBalance = await InfoContract.methods
       .getStakedTokens(item.index, address)
@@ -529,7 +569,10 @@ const showBorrowDepositModal = async (item: any) => {
   borrowDepositVisible.value = true;
   chooseItem.value = item;
   //获取ALP balance
-  let Contract = new relWeb3.value.eth.Contract(Erc20Abi as any, shareContract);
+  let Contract = new relWeb3.value.eth.Contract(
+    Erc20Abi as any,
+    shareContract.value
+  );
   let resBalance = await Contract.methods
     .balanceOf(address.value)
     .call((err: any, result: any) => {
@@ -544,14 +587,18 @@ const showBorrowDepositModal = async (item: any) => {
 
   let lendingPoolContract = new relWeb3.value.eth.Contract(
     LendingPoolFarmAbi as any,
-    farmPoolContract
+    farmPoolContract.value
   );
-  let PscContract = new relWeb3.value.eth.Contract(Psc as any, pscContract, {
-    from: address.value,
-  });
+  let PscContract = new relWeb3.value.eth.Contract(
+    Psc as any,
+    pscContract.value,
+    {
+      from: address.value,
+    }
+  );
   let alpContract = new relWeb3.value.eth.Contract(
     Erc20Abi as any,
-    shareContract
+    shareContract.value
   );
   let LpAmountTotal = await PscContract.methods
     .lpAmountTotal()
@@ -574,7 +621,7 @@ const showBorrowDepositModal = async (item: any) => {
     });
   lpTokenPrice.value = LpTokenPrice;
   let LendingPoolCollateralPercent = await lendingPoolContract.methods
-    .getCollateralPercent(shareContract)
+    .getCollateralPercent(shareContract.value)
     .call((err: any, result: any) => {
       if (!err) {
         return result;
@@ -611,13 +658,17 @@ const BorrowDepositModalHandleCancel = () => {
 };
 
 const approve = () => {
-  let Contract = new relWeb3.value.eth.Contract(Erc20Abi as any, lpContract, {
-    from: address.value,
-  });
+  let Contract = new relWeb3.value.eth.Contract(
+    Erc20Abi as any,
+    lpContract.value,
+    {
+      from: address.value,
+    }
+  );
   //approve参数: 1.币种地址,2.金额
   Contract.methods
     .approve(
-      manageContract,
+      manageContract.value,
       new BigNumber(amount.value).multipliedBy(Math.pow(10, 18)).toFixed()
     )
     .send({ from: address.value }, (err: any, result: any) => {
@@ -632,7 +683,7 @@ const approve = () => {
 const deposit = async () => {
   let Contract = new relWeb3.value.eth.Contract(
     ManageAbi as any,
-    manageContract,
+    manageContract.value,
     {
       from: address.value,
     }
@@ -662,7 +713,7 @@ const deposit = async () => {
 };
 
 const earn = async () => {
-  let Contract = new relWeb3.value.eth.Contract(Psc as any, pscContract, {
+  let Contract = new relWeb3.value.eth.Contract(Psc as any, pscContract.value, {
     from: address.value,
   });
   Contract.methods
@@ -679,7 +730,7 @@ const earn = async () => {
 const liquidate = async () => {
   let Contract = new relWeb3.value.eth.Contract(
     ManageAbi as any,
-    manageContract,
+    manageContract.value,
     {
       from: address.value,
     }
@@ -705,7 +756,7 @@ const liquidate = async () => {
 const withdraw = async () => {
   let Contract = new relWeb3.value.eth.Contract(
     ManageAbi as any,
-    manageContract,
+    manageContract.value,
     {
       from: address.value,
     }
@@ -741,7 +792,7 @@ const showTabPane = async (item: any) => {
   //   //获取sharePool
   //   let ShareContract = new relWeb3.value.eth.Contract(
   //     Erc20Abi as any,
-  //     shareContract
+  //     shareContract.value
   //   );
   //   let ShareToken = await ShareContract.methods
   //     .balanceOf(address.value)
@@ -758,7 +809,7 @@ const showTabPane = async (item: any) => {
 
   //   let InfoContract = new relWeb3.value.eth.Contract(
   //     InfoAbi as any,
-  //     infoContract,
+  //     infoContract.value,
   //     {
   //       from: address.value,
   //     }
@@ -793,7 +844,7 @@ const showTabPane = async (item: any) => {
   if (item === "4") {
     let InfoContract = new relWeb3.value.eth.Contract(
       InfoAbi as any,
-      infoContract,
+      infoContract.value,
       {
         from: address.value,
       }
@@ -835,14 +886,14 @@ const showTabPane = async (item: any) => {
 const approveBorrow = async () => {
   let Contract = new relWeb3.value.eth.Contract(
     Erc20Abi as any,
-    shareContract,
+    shareContract.value,
     {
       from: address.value,
     }
   );
   Contract.methods
     .approve(
-      manageContract,
+      manageContract.value,
       new BigNumber(borrowAmount.value).multipliedBy(Math.pow(10, 18)).toFixed()
     )
     .send({ from: address.value }, (err: any, result: any) => {
@@ -857,7 +908,7 @@ const approveBorrow = async () => {
 const borrow = async () => {
   let Contract = new relWeb3.value.eth.Contract(
     ManageAbi as any,
-    manageContract,
+    manageContract.value,
     {
       from: address.value,
     }
@@ -886,11 +937,15 @@ const borrow = async () => {
 };
 
 const approveRepay = async () => {
-  let Contract = new relWeb3.value.eth.Contract(Erc20Abi as any, usdaContract, {
-    from: address.value,
-  });
+  let Contract = new relWeb3.value.eth.Contract(
+    Erc20Abi as any,
+    usdaContract.value,
+    {
+      from: address.value,
+    }
+  );
   Contract.methods
-    .approve(manageContract, testNeedToRepay.value)
+    .approve(manageContract.value, testNeedToRepay.value)
     .send({ from: address.value }, (err: any, result: any) => {
       if (err) {
         message.error(JSON.stringify(err.message));
@@ -903,7 +958,7 @@ const approveRepay = async () => {
 const approveUSDA = async () => {
   let Contract = new relWeb3.value.eth.Contract(
     ManageAbi as any,
-    manageContract,
+    manageContract.value,
     {
       from: address.value,
     }
@@ -928,7 +983,7 @@ const approveUSDA = async () => {
 const repay = async () => {
   let Contract = new relWeb3.value.eth.Contract(
     ManageAbi as any,
-    manageContract,
+    manageContract.value,
     {
       from: address.value,
     }
@@ -955,7 +1010,7 @@ const shareTokenChange = async (e: Event) => {
   if ((e.target as HTMLInputElement).value) {
     let Contract = new relWeb3.value.eth.Contract(
       ManageAbi as any,
-      manageContract,
+      manageContract.value,
       {
         from: address.value,
       }
@@ -995,14 +1050,14 @@ const BorrowDepositAmountChange = (e: Event) => {
 const approveBorrowDeposit = async () => {
   let Contract = new relWeb3.value.eth.Contract(
     Erc20Abi as any,
-    shareContract,
+    shareContract.value,
     {
       from: address.value,
     }
   );
   Contract.methods
     .approve(
-      manageContract,
+      manageContract.value,
       new BigNumber(BorrowDepositAmount.value)
         .multipliedBy(Math.pow(10, 18))
         .toFixed()
@@ -1019,7 +1074,7 @@ const approveBorrowDeposit = async () => {
 const BorrowDeposit = async () => {
   let Contract = new relWeb3.value.eth.Contract(
     ManageAbi as any,
-    manageContract,
+    manageContract.value,
     {
       from: address.value,
     }

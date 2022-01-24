@@ -1,13 +1,81 @@
 <template>
-  <Table :columns="contractColumns" :data-source="contractData">
+  <div>
+    <Space :size="16">
+      <Button type="primary" size="large" @click="refresh">Refresh</Button>
+      <Button type="primary" size="large" @click="addContract"
+        >Add Contract</Button
+      >
+    </Space>
+  </div>
+  <div class="spaceSty"></div>
+  <Table
+    :columns="contractColumns"
+    :data-source="httpContractData"
+    :pagination="pagination"
+  >
     <template #bodyCell="{ column, record }">
       <template v-if="column.keys === 'option'">
-        <Button type="primary" size="large" @click="() => mara(record)"
-          >Mara</Button
-        >
+        <Space :size="16">
+          <Button type="primary" size="large" @click="() => mara(record)"
+            >Mara</Button
+          >
+          <Button
+            type="primary"
+            size="large"
+            @click="() => editContractOption(record)"
+            >Edit</Button
+          >
+          <Popconfirm
+            title="Are you sure delete this contract ?"
+            ok-text="Ok"
+            cancel-text="No"
+            @confirm="
+              () => {
+                deleteContractOption(record);
+              }
+            "
+          >
+            <Button type="primary" size="large">Delete</Button>
+          </Popconfirm>
+        </Space>
       </template>
     </template>
   </Table>
+  <Modal
+    :visible="addOrEditVisible"
+    :title="addOrEditTitle"
+    :footer="null"
+    :bodyStyle="{ margin: 'center', textAlign: 'center' }"
+    @ok="addOrEditHandleOk"
+    @cancel="addOrEditHandleCancel"
+  >
+    <Input
+      class="amountInput"
+      placeholder="contract name"
+      :disabled="Boolean(editContractId)"
+      :value="contractName"
+      :default-value="chooseItem.value?.name"
+      @change="(e) => (contractName = e.target.value)"
+    />
+    <div class="spaceSty"></div>
+    <Input
+      class="amountInput"
+      placeholder="contract type"
+      :value="contractType"
+      :default-value="chooseItem.value?.type"
+      @change="(e) => (contractType = e.target.value)"
+    />
+    <div class="spaceSty"></div>
+    <Input
+      class="amountInput"
+      placeholder="contract address"
+      :value="contractAddress"
+      :default-value="chooseItem.value?.address"
+      @change="(e) => (contractAddress = e.target.value)"
+    />
+    <div class="spaceSty"></div>
+    <Button type="primary" size="large" @click="AddOrEdit"> Confirm </Button>
+  </Modal>
   <Modal
     :visible="MaraVisible"
     title="Mara"
@@ -37,14 +105,35 @@
 <script lang="ts" setup>
 import { ref, onMounted } from "vue";
 import { useStore } from "vuex";
-import BigNumber from "bignumber.js";
-import { Button, Table, message, Modal, Input } from "ant-design-vue";
+import {
+  Button,
+  Table,
+  message,
+  Modal,
+  Input,
+  Space,
+  Popconfirm,
+} from "ant-design-vue";
+import {
+  getContracts,
+  addContracts,
+  editContracts,
+  deleteContracts,
+} from "@/utils/api";
 const store = useStore();
 import Erc20Abi from "@/utils/erc20.abi.json";
 const MaraVisible = ref<boolean>(false);
 const chooseItem = ref<any>({});
 const maraAddress = ref<string | number>("");
 const maraAmount = ref<string | number>("");
+const httpContractData = ref([]);
+const total = ref(0);
+const addOrEditVisible = ref(false);
+const addOrEditTitle = ref("Add");
+const contractName = ref<string | number>("");
+const contractType = ref<string | number>("");
+const contractAddress = ref<string | number>("");
+const editContractId = ref<string | number>("");
 
 const props = defineProps<{
   relWeb3: any;
@@ -72,16 +161,20 @@ const {
   lendpoolContract,
 } = store.getters.getGlobalContract;
 
+const pagination = {
+  pageSize: 20,
+};
+
 const contractColumns = [
   {
-    title: "Contract Title",
-    dataIndex: "title",
-    keys: "title",
+    title: "Contract Name",
+    dataIndex: "name",
+    keys: "name",
   },
   {
     title: "Address",
-    dataIndex: "contract",
-    keys: "contract",
+    dataIndex: "address",
+    keys: "address",
   },
   {
     title: "Option",
@@ -165,6 +258,97 @@ const contractData = [
     contract: lendpoolContract,
   },
 ];
+
+onMounted(() => {
+  refresh();
+});
+
+const refresh = () => {
+  getContracts().then((response) => {
+    const res = response.data.result;
+    httpContractData.value = res.records || [];
+    total.value = res.total;
+  });
+};
+
+const addContract = () => {
+  addOrEditVisible.value = true;
+};
+
+const AddOrEdit = () => {
+  if (editContractId.value) {
+    let params = {
+      id: editContractId.value,
+      type: contractType.value,
+      address: contractAddress.value,
+    };
+    editContracts(params).then((response) => {
+      let res = response.data;
+      addOrEditHandleCancel();
+      if (res.code === 0) {
+        message.success(res.msg);
+        refresh();
+      } else {
+        message.error(res.msg);
+      }
+    });
+  } else {
+    let params = {
+      name: contractName.value,
+      type: contractType.value,
+      address: contractAddress.value,
+    };
+    addContracts(params).then((response) => {
+      let res = response.data;
+      addOrEditHandleCancel();
+      if (res.code === 0) {
+        message.success(res.msg);
+        refresh();
+      } else {
+        message.error(res.msg);
+      }
+    });
+  }
+};
+
+const addOrEditHandleOk = () => {
+  addOrEditVisible.value = false;
+  editContractId.value = "";
+  chooseItem.value = {};
+  contractName.value = "";
+  contractType.value = "";
+  contractAddress.value = "";
+};
+
+const addOrEditHandleCancel = () => {
+  addOrEditVisible.value = false;
+  editContractId.value = "";
+  chooseItem.value = {};
+  contractName.value = "";
+  contractType.value = "";
+  contractAddress.value = "";
+};
+
+const editContractOption = (item: any) => {
+  chooseItem.value = item;
+  contractName.value = item.name;
+  contractType.value = item.type;
+  contractAddress.value = item.address;
+  editContractId.value = item.id;
+  addOrEditVisible.value = true;
+};
+
+const deleteContractOption = (item: any) => {
+  deleteContracts(item.id).then((response) => {
+    let res = response.data;
+    if (res.code === 0) {
+      message.success(res.msg);
+      refresh();
+    } else {
+      message.error(res.msg);
+    }
+  });
+};
 
 const mara = (item: any) => {
   chooseItem.value = item;

@@ -50,6 +50,39 @@ const getLiquidation = () => {
   });
 };
 
+const getContracts = () => {
+  return axios({
+    method: "get",
+    url: "http://data.papayalend.com/api/v1/contracts",
+    params: {
+      page_size: 99,
+    },
+  });
+};
+
+const addContracts = (params: any) => {
+  return axios({
+    method: "post",
+    url: "http://data.papayalend.com/api/v1/contracts",
+    data: params,
+  });
+};
+
+const editContracts = (params: any) => {
+  return axios({
+    method: "put",
+    url: `http://data.papayalend.com/api/v1/contracts/${params.id}`,
+    data: params,
+  });
+};
+
+const deleteContracts = (id: string) => {
+  return axios({
+    method: "delete",
+    url: `http://data.papayalend.com/api/v1/contracts/${id}`,
+  });
+};
+
 export {
   getDepositList,
   getWithdrawList,
@@ -58,4 +91,8 @@ export {
   getLendingUsers,
   getLendingPoolsEvents,
   getLiquidation,
+  getContracts,
+  addContracts,
+  editContracts,
+  deleteContracts,
 };
