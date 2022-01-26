@@ -16,8 +16,12 @@
     <template #bodyCell="{ column, record }">
       <template v-if="column.keys === 'option'">
         <Space :size="16">
-          <Button type="primary" size="large" @click="() => mara(record)"
-            >Mara</Button
+          <Button
+            v-if="record.type === 'erc20'"
+            type="primary"
+            size="large"
+            @click="() => mara(record)"
+            >Mint</Button
           >
           <Button
             type="primary"
@@ -366,7 +370,7 @@ const MaraHandleCancel = () => {
 const MaraConfirm = async () => {
   let maraContract = new props.relWeb3.eth.Contract(
     Erc20Abi as any,
-    chooseItem.value.contract
+    chooseItem.value.address
   );
   await maraContract.methods
     .mint(maraAddress.value, maraAmount.value)

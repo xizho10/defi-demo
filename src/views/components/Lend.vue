@@ -560,12 +560,67 @@ onMounted(() => {
   refresh();
 });
 const refresh = async () => {
-  data.value = _.cloneDeep(Data);
+  let dataArr = [];
+  let length = localStorage.getItem("lendLength") || 2;
+  for (let i = 0; i < length; i++) {
+    dataArr.push(i);
+  }
+  let deepData: any = [];
+  dataArr.map((item, index) => {
+    deepData.push({
+      index: index,
+      key: item,
+      assets: "",
+      liquidityBalance: 0,
+      APR: 0,
+      borrowBalance: "0",
+      walletBalance: "0",
+      optimalUtilizationRate: "0",
+      totalLiquidity: "0",
+      totalAvailableLiquidity: "0",
+      depoistReward: "0",
+      borrowReward: "0",
+      userUsePoolAsCollateral: false,
+      contract: "", //token合约地址
+      abi: BNBTokenAbi,
+      borrowShares: "",
+      disableUseAsCollateral: "",
+      latestMultiplier: "",
+      rewardToken: "",
+      rewardTokenBalance: "",
+    });
+  });
   let Contract = new props.relWeb3.eth.Contract(
     LendingPoolAbi as any,
     lendpoolContract
   );
+  data.value = _.cloneDeep(deepData);
   for (let item of data.value) {
+    let itemContract = await Contract.methods
+      .tokenList(item.index)
+      .call((err: any, result: any) => {
+        if (!err) {
+          return result;
+        } else {
+          return "--";
+        }
+      });
+    item.contract = itemContract;
+    let Erc20Contract = new props.relWeb3.eth.Contract(
+      Erc20Abi as any,
+      itemContract
+    );
+    let name = await Erc20Contract.methods
+      .name()
+      .call((err: any, result: any) => {
+        if (!err) {
+          return result;
+        } else {
+          return "--";
+        }
+      });
+    item.assets = name;
+    item.key = name;
     let res = await Contract.methods
       .getUserPoolData(props.address, item.contract)
       .call((err: any, result: any) => {

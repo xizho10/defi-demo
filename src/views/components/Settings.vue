@@ -137,6 +137,18 @@
             withdrawReserve
           </Button>
         </div>
+        <div class="spaceSty"></div>
+        <div>
+          <Input
+            class="farmInput"
+            placeholder="Lend Length"
+            :value="defaultLendLength"
+            @change="(e:any) => (defaultLendLength = e.target.value)"
+          />
+          <Button type="primary" size="large" @click="setLendLength">
+            setLendLength
+          </Button>
+        </div>
       </TabPane>
     </Tabs>
   </div>
@@ -255,7 +267,10 @@ const setPoolStatusToken = ref<any>("");
 const setPoolStatusStatus = ref<any>("");
 const setPriceOracleAddress = ref<any>("");
 
+const defaultLendLength = ref<number | string>("");
+
 onMounted(() => {
+  defaultLendLength.value = localStorage.getItem("lendLength") || 2;
   refresh();
 });
 
@@ -495,6 +510,10 @@ const setPriceOracle = async () => {
         }
       }
     );
+};
+
+const setLendLength = () => {
+  localStorage["lendLength"] = defaultLendLength.value;
 };
 </script>
 
