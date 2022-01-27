@@ -385,24 +385,15 @@ import {
 import _ from "lodash";
 import LendingPoolAbi from "@/utils/LendingPool_metadata.abi.json";
 import BNBTokenAbi from "@/utils/BNBToken_metadata.abi.json";
-import DAITokenAbi from "@/utils/DaiToken_metadata.abi.json";
-import BUSDTokenAbi from "@/utils/BUSDToken_metadata.abi.json";
 import PoolConfigurationAbi from "@/utils/PoolConfiguration_metadata.abi.json";
 import MockPriceOracleAbi from "@/utils/MockPriceOracle_metadata.abi.json";
 import MaTokenMetadataAbi from "@/utils/MaToken_metadata.abi.json";
 import Erc20Abi from "@/utils/erc20.abi.json";
+import { getContracts } from "@/utils/api";
 const store = useStore();
 
-const {
-  usdaContract,
-  lendpoolContract,
-  bnbContract,
-  daiContract,
-  busdContract,
-  oracleContract,
-  maraContract,
-  lendpoolinfoContract,
-} = store.getters.getGlobalContract;
+const { lendpoolContract, oracleContract, maraContract, lendpoolinfoContract } =
+  store.getters.getGlobalContract;
 
 const columns = [
   {
@@ -469,77 +460,12 @@ const columns = [
     dataIndex: "borrowOperation",
   },
 ];
-const Data = [
-  {
-    key: "BNB",
-    assets: "BNB",
-    liquidityBalance: 0,
-    APR: 0,
-    borrowBalance: "0",
-    walletBalance: "0",
-    optimalUtilizationRate: "0",
-    totalLiquidity: "0",
-    totalAvailableLiquidity: "0",
-    depoistReward: "0",
-    borrowReward: "0",
-    userUsePoolAsCollateral: false,
-    contract: bnbContract, //BNB合约地址
-    abi: BNBTokenAbi,
-    borrowShares: "",
-    disableUseAsCollateral: "",
-    latestMultiplier: "",
-    rewardToken: "",
-    rewardTokenBalance: "",
-  },
-  {
-    key: "DAI",
-    assets: "DAI",
-    liquidityBalance: 0,
-    APR: 0,
-    borrowBalance: "0",
-    walletBalance: "0",
-    optimalUtilizationRate: "0",
-    totalLiquidity: "0",
-    totalAvailableLiquidity: "0",
-    depoistReward: "0",
-    borrowReward: "0",
-    userUsePoolAsCollateral: false,
-    contract: daiContract, //DAI合约地址
-    abi: DAITokenAbi,
-    borrowShares: "",
-    disableUseAsCollateral: "",
-    latestMultiplier: "",
-    rewardToken: "",
-    rewardTokenBalance: "",
-  },
-  // {
-  //   key: "BUSD",
-  //   assets: "BUSD",
-  //   liquidityBalance: 0,
-  //   APR: 0,
-  //   borrowBalance: "0",
-  //   walletBalance: "0",
-  //   optimalUtilizationRate: "0",
-  //   totalLiquidity: "0",
-  //   totalAvailableLiquidity: "0",
-  //   depoistReward: "0",
-  //   borrowReward: "0",
-  //   userUsePoolAsCollateral: false,
-  //   contract: busdContract, //BUSD合约地址
-  //   abi: BUSDTokenAbi,
-  //   borrowShares: "",
-  //   disableUseAsCollateral: "",
-  //   latestMultiplier: "",
-  //   rewardToken: "",
-  //   rewardTokenBalance: "",
-  // },
-];
 
 const props = defineProps<{
   relWeb3: any;
   address: string;
 }>();
-const data = ref<any>(Data);
+const data = ref<any>([]);
 const LendApproveAmount = ref<string | number>("");
 const LendDepositAmount = ref<string | number>("");
 const LendBorrowAmount = ref<string | number>("0");
@@ -560,8 +486,16 @@ onMounted(() => {
   refresh();
 });
 const refresh = async () => {
+  let length = 0;
+  let lengthRes = await getContracts();
+  let lengthResponse = lengthRes.data.result;
+  lengthResponse?.records &&
+    lengthResponse.records.map((item: any) => {
+      if (item.name === "tokenListLength") {
+        length = item.address;
+      }
+    });
   let dataArr = [];
-  let length = localStorage.getItem("lendLength") || 2;
   for (let i = 0; i < length; i++) {
     dataArr.push(i);
   }

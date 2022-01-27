@@ -1,5 +1,6 @@
 const Config = "0x23FCC55a51a0Bf4D0CA21FA1FF2C29CD710D17E7";
-const lpContract = "0x1E5Ee8FDBED23F70CB7f6Dd658318E391271d467";
+const BUSDDAILpContract = "0x127cc9F695A3bF4a4FFa9A39d72a5b8F504ECaef";
+const USDTDAILpContract = "0xcF10DCa65c0Fe989b5Fc859e7E148d4CF4569262";
 const manageContract = "0x7e53F7fCD0099AE9A0010FF2a7F7a211E8eAeA91";
 const shareContract = "0x433b1e6cc81531142d5DB368c4788A189A7E6727";
 const pscContract = "0xc8576FB94ad58E199dE8deB5A24e5741DaE0E9a4";
@@ -23,7 +24,8 @@ const lendpoolContract = "0x34DB65316B5A112a373dA446e58e60A6004e0821";
 
 export {
   Config,
-  lpContract,
+  BUSDDAILpContract,
+  USDTDAILpContract,
   manageContract,
   shareContract,
   pscContract,

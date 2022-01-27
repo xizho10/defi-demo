@@ -144,26 +144,25 @@ const props = defineProps<{
   address: string;
 }>();
 
-const {
-  Config,
-  lpContract,
-  manageContract,
-  shareContract,
-  pscContract,
-  usdaContract,
-  infoContract,
-  farmPoolContract,
-  bnbContract,
-  daiContract,
-  busdContract,
-  alphaReleaseRuleSelectorContract,
-  oracleContract,
-  maraContract,
-  lendpoolconfigContract,
-  lendpoolinfoContract,
-  matokendeployerContract,
-  lendpoolContract,
-} = store.getters.getGlobalContract;
+// const {
+//   Config,
+//   manageContract,
+//   shareContract,
+//   pscContract,
+//   usdaContract,
+//   infoContract,
+//   farmPoolContract,
+//   bnbContract,
+//   daiContract,
+//   busdContract,
+//   alphaReleaseRuleSelectorContract,
+//   oracleContract,
+//   maraContract,
+//   lendpoolconfigContract,
+//   lendpoolinfoContract,
+//   matokendeployerContract,
+//   lendpoolContract,
+// } = store.getters.getGlobalContract;
 
 const pagination = {
   pageSize: 20,
@@ -187,81 +186,77 @@ const contractColumns = [
   },
 ];
 
-const contractData = [
-  {
-    title: "config",
-    contract: Config,
-  },
-  {
-    title: "lpContract",
-    contract: lpContract,
-  },
-  {
-    title: "manageContract",
-    contract: manageContract,
-  },
-  {
-    title: "shareContract",
-    contract: shareContract,
-  },
-  {
-    title: "pscContract",
-    contract: pscContract,
-  },
-  {
-    title: "usdaContract",
-    contract: usdaContract,
-  },
-  {
-    title: "infoContract",
-    contract: infoContract,
-  },
-  {
-    title: "farmPoolContract",
-    contract: farmPoolContract,
-  },
-  {
-    title: "bnbContract",
-    contract: bnbContract,
-  },
-  {
-    title: "daiContract",
-    contract: daiContract,
-  },
-  {
-    title: "busdContract",
-    contract: busdContract,
-  },
-  {
-    title: "alphaReleaseRuleSelectorContract",
-    contract: alphaReleaseRuleSelectorContract,
-  },
-  {
-    title: "oracleContract",
-    contract: oracleContract,
-  },
+// const contractData = [
+//   {
+//     title: "config",
+//     contract: Config,
+//   },
+//   {
+//     title: "manageContract",
+//     contract: manageContract,
+//   },
+//   {
+//     title: "shareContract",
+//     contract: shareContract,
+//   },
+//   {
+//     title: "pscContract",
+//     contract: pscContract,
+//   },
+//   {
+//     title: "usdaContract",
+//     contract: usdaContract,
+//   },
+//   {
+//     title: "infoContract",
+//     contract: infoContract,
+//   },
+//   {
+//     title: "farmPoolContract",
+//     contract: farmPoolContract,
+//   },
+//   {
+//     title: "bnbContract",
+//     contract: bnbContract,
+//   },
+//   {
+//     title: "daiContract",
+//     contract: daiContract,
+//   },
+//   {
+//     title: "busdContract",
+//     contract: busdContract,
+//   },
+//   {
+//     title: "alphaReleaseRuleSelectorContract",
+//     contract: alphaReleaseRuleSelectorContract,
+//   },
+//   {
+//     title: "oracleContract",
+//     contract: oracleContract,
+//   },
 
-  {
-    title: "maraContract",
-    contract: maraContract,
-  },
-  {
-    title: "lendpoolconfigContract",
-    contract: lendpoolconfigContract,
-  },
-  {
-    title: "lendpoolinfoContract",
-    contract: lendpoolinfoContract,
-  },
-  {
-    title: "matokendeployerContract",
-    contract: matokendeployerContract,
-  },
-  {
-    title: "lendpoolContract",
-    contract: lendpoolContract,
-  },
-];
+//   {
+//     title: "maraContract",
+//     contract: maraContract,
+//   },
+//   {
+//     title: "lendpoolconfigContract",
+//     contract: lendpoolconfigContract,
+//   },
+//   {
+//     title: "lendpoolinfoContract",
+//     contract: lendpoolinfoContract,
+//   },
+//   {
+//     title: "matokendeployerContract",
+//     contract: matokendeployerContract,
+//   },
+//   {
+//     title: "lendpoolContract",
+//     contract: lendpoolContract,
+//   },
+// ];
 
 onMounted(() => {
   refresh();

@@ -12,7 +12,6 @@
           @change="farmOrLendOnChange"
         >
           <TabPane tab="Farm" key="1">
-            <div>LP balance: {{ balance }}</div>
             <div>totalAllocPoint: {{ totalAllocPoint }}</div>
             <div>maraPerBlock: {{ maraPerBlock }}</div>
             <div>startBlock: {{ startBlock }}</div>
@@ -340,7 +339,6 @@ import { getContracts } from "@/utils/api";
 const store = useStore();
 
 const getGlobalContract = store.getters.getGlobalContract;
-const lpContract = ref(getGlobalContract.lpContract);
 const manageContract = ref(getGlobalContract.manageContract);
 const shareContract = ref(getGlobalContract.shareContract);
 const pscContract = ref(getGlobalContract.pscContract);
@@ -398,7 +396,6 @@ const borrowDepositVisible = ref<boolean>(false);
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const relWeb3 = ref<any>("");
 const showCoinBtn = ref<boolean>(false);
-const balance = ref<string | number>("");
 const totalAllocPoint = ref<string | number>("");
 const maraPerBlock = ref<string | number>("");
 const startBlock = ref<string | number>("");
@@ -444,12 +441,11 @@ const connectClick = () => {
       address.value = res[0];
       getContracts().then(async (response) => {
         let res = response.data.result;
+        let contract: any = {};
         if (res.records) {
           res.records.map((item: any) => {
+            contract[item.name] = item.address;
             switch (item.name) {
-              case "lpContract":
-                lpContract.value = item.address;
-                break;
               case "manageContract":
                 manageContract.value = item.address;
                 break;
@@ -473,6 +469,7 @@ const connectClick = () => {
                 break;
             }
           });
+          await store.dispatch("setGlobalContractActions", contract);
           getBalanceOf(RelWeb3, address.value);
           showCoinBtn.value = true;
         }
@@ -560,21 +557,6 @@ const getBalanceOf = async (relWeb3: Web3, address: string) => {
     });
   });
   data.value = _.cloneDeep(deepData);
-  //获取LP balance
-  let Contract = new relWeb3.eth.Contract(Erc20Abi as any, lpContract.value);
-  let resBalance = await Contract.methods
-    .balanceOf(address)
-    .call((err: any, result: any) => {
-      if (!err) {
-        return result;
-      } else {
-        return "--";
-      }
-    });
-  let Balance = new BigNumber(resBalance)
-    .dividedBy(Math.pow(10, 18))
-    .toFixed(4);
-  balance.value = Balance;
 
   let InfoContract = new relWeb3.eth.Contract(
     InfoAbi as any,
@@ -1071,7 +1053,7 @@ const BorrowDepositModalHandleCancel = () => {
 const approve = () => {
   let Contract = new relWeb3.value.eth.Contract(
     Erc20Abi as any,
-    lpContract.value,
+    chooseItem.value.poolInfos.lpToken,
     {
       from: address.value,
     }

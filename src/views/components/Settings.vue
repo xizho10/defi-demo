@@ -137,18 +137,6 @@
             withdrawReserve
           </Button>
         </div>
-        <div class="spaceSty"></div>
-        <div>
-          <Input
-            class="farmInput"
-            placeholder="Lend Length"
-            :value="defaultLendLength"
-            @change="(e:any) => (defaultLendLength = e.target.value)"
-          />
-          <Button type="primary" size="large" @click="setLendLength">
-            setLendLength
-          </Button>
-        </div>
       </TabPane>
     </Tabs>
   </div>
@@ -185,22 +173,17 @@ import {
   Input,
 } from "ant-design-vue";
 const store = useStore();
-import BNBTokenAbi from "@/utils/BNBToken_metadata.abi.json";
-import DAITokenAbi from "@/utils/DaiToken_metadata.abi.json";
+import _ from "lodash";
 import MockPriceOracleAbi from "@/utils/MockPriceOracle_metadata.abi.json";
 import LendingPoolAbi from "@/utils/LendingPool_metadata.abi.json";
 import InfoAbi from "@/utils/info.abi.json";
 import ManageAbi from "@/utils/manageAbi.abi.json";
 import ConfigParams from "@/views/components/ConfigParams.vue";
+import Erc20Abi from "@/utils/erc20.abi.json";
+import { getContracts } from "@/utils/api";
 
-const {
-  manageContract,
-  infoContract,
-  lendpoolContract,
-  bnbContract,
-  daiContract,
-  oracleContract,
-} = store.getters.getGlobalContract;
+const { manageContract, infoContract, lendpoolContract, oracleContract } =
+  store.getters.getGlobalContract;
 
 const props = defineProps<{
   relWeb3: any;
@@ -210,8 +193,8 @@ const props = defineProps<{
 const columns = [
   {
     title: "Asset",
-    dataIndex: "coin",
-    keys: "coin",
+    dataIndex: "assets",
+    keys: "assets",
   },
   {
     title: "Contract",
@@ -230,20 +213,7 @@ const columns = [
   },
 ];
 
-const Data = [
-  {
-    coin: "BNB",
-    contract: bnbContract,
-    abi: BNBTokenAbi,
-  },
-  {
-    coin: "DAI",
-    contract: daiContract,
-    abi: DAITokenAbi,
-  },
-];
-
-const data = ref<any>(Data);
+const data = ref<any>([]);
 const Visible = ref<boolean>(false);
 const assetPrice = ref<string | number>("");
 const chooseItem = ref<any>({});
@@ -267,10 +237,7 @@ const setPoolStatusToken = ref<any>("");
 const setPoolStatusStatus = ref<any>("");
 const setPriceOracleAddress = ref<any>("");
 
-const defaultLendLength = ref<number | string>("");
-
 onMounted(() => {
-  defaultLendLength.value = localStorage.getItem("lendLength") || 2;
   refresh();
 });
 
@@ -281,12 +248,63 @@ const tabsChange = (item: string) => {
 };
 
 const refresh = async () => {
-  data.value = Data;
+  let length = 0;
+  let lengthRes = await getContracts();
+  let lengthResponse = lengthRes.data.result;
+  lengthResponse?.records &&
+    lengthResponse.records.map((item: any) => {
+      if (item.name === "tokenListLength") {
+        length = item.address;
+      }
+    });
+  let dataArr = [];
+  for (let i = 0; i < length; i++) {
+    dataArr.push(i);
+  }
+  let deepData: any = [];
+  dataArr.map((item, index) => {
+    deepData.push({
+      key: item,
+      index: index,
+      assets: "",
+      assetPrice: "",
+      contract: "",
+    });
+  });
+  data.value = _.cloneDeep(deepData);
+  let Contract = new props.relWeb3.eth.Contract(
+    LendingPoolAbi as any,
+    lendpoolContract
+  );
   let MockPriceOracleContract = new props.relWeb3.eth.Contract(
     MockPriceOracleAbi as any,
     oracleContract
   );
   for (let item of data.value) {
+    let itemContract = await Contract.methods
+      .tokenList(item.index)
+      .call((err: any, result: any) => {
+        if (!err) {
+          return result;
+        } else {
+          return "--";
+        }
+      });
+    item.contract = itemContract;
+    let Erc20Contract = new props.relWeb3.eth.Contract(
+      Erc20Abi as any,
+      itemContract
+    );
+    let name = await Erc20Contract.methods
+      .name()
+      .call((err: any, result: any) => {
+        if (!err) {
+          return result;
+        } else {
+          return "--";
+        }
+      });
+    item.assets = name;
     let AssetPrice = await MockPriceOracleContract.methods
       .getAssetPrice(item.contract)
       .call((err: any, result: any) => {
@@ -510,10 +528,6 @@ const setPriceOracle = async () => {
         }
       }
     );
-};
-
-const setLendLength = () => {
-  localStorage["lendLength"] = defaultLendLength.value;
 };
 </script>
 
