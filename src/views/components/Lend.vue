@@ -516,7 +516,7 @@ const refresh = async () => {
       borrowReward: "0",
       userUsePoolAsCollateral: false,
       contract: "", //token合约地址
-      abi: BNBTokenAbi,
+      abi: Erc20Abi,
       borrowShares: "",
       disableUseAsCollateral: "",
       latestMultiplier: "",
@@ -735,7 +735,7 @@ const refresh = async () => {
     item.baseBorrowRate = baseBorrowRate;
     //获取rateSlope1
     let rateSlope1 = await poolConfigContract.methods
-      .baseBorrowRate()
+      .rateSlope1()
       .call((err: any, result: any) => {
         if (!err) {
           return result;
@@ -746,7 +746,7 @@ const refresh = async () => {
     item.rateSlope1 = rateSlope1;
     //获取rateSlope2
     let rateSlope2 = await poolConfigContract.methods
-      .baseBorrowRate()
+      .rateSlope2()
       .call((err: any, result: any) => {
         if (!err) {
           return result;
@@ -757,7 +757,7 @@ const refresh = async () => {
     item.rateSlope2 = rateSlope2;
     //获取collateralPercent
     let collateralPercent = await poolConfigContract.methods
-      .baseBorrowRate()
+      .collateralPercent()
       .call((err: any, result: any) => {
         if (!err) {
           return result;
@@ -768,7 +768,7 @@ const refresh = async () => {
     item.collateralPercent = collateralPercent;
     //获取liquidationBonusPercent
     let liquidationBonusPercent = await poolConfigContract.methods
-      .baseBorrowRate()
+      .liquidationBonusPercent()
       .call((err: any, result: any) => {
         if (!err) {
           return result;

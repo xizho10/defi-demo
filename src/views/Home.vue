@@ -37,15 +37,15 @@
                     Withdraw
                   </Button>
                 </template>
-                <!-- <template v-if="column.keys === 'borrowOperation'">
+                <template v-if="column.keys === 'borrowOperation'">
                   <Button
                     type="primary"
                     size="large"
                     @click="() => showBorrowDepositModal(record)"
                   >
-                    BorrowDeposit
+                    Borrow
                   </Button>
-                </template> -->
+                </template>
               </template>
               <template #expandedRowRender="{ record }">
                 <p style="margin: 0">
@@ -268,22 +268,21 @@
   </Modal>
   <Modal
     :visible="borrowDepositVisible"
-    title="BorrowDeposit"
+    title="Borrow"
     :footer="null"
     :bodyStyle="{ margin: 'center', textAlign: 'center' }"
     @ok="BorrowDepositModalHandleOk"
     @cancel="BorrowDepositModalHandleCancel"
   >
-    <div>
-      collateral(aLP):
-      {{ new BigNumber(alpBalance).dividedBy(Math.pow(10, 18)).toFixed(4) }}
-    </div>
     <div>Borrow Token:</div>
-    <RadioGroup v-model:value="borrowToken">
-      <Radio :value="usdaContract.value">USDT</Radio>
+    <RadioGroup v-model:value="borrowToken" @change="borrowTokenChange">
+      <Radio
+        v-for="item in borrowTokenData"
+        :key="item.contract"
+        :value="item.contract"
+        >{{ item.assets }}</Radio
+      >
     </RadioGroup>
-    <div class="spaceSty" />
-    <div>max borrow: {{ maxBorrow }}(USDT)</div>
     <div class="spaceSty" />
     <Input
       class="amountInput"
@@ -291,16 +290,16 @@
       :value="BorrowDepositAmount"
       @change="BorrowDepositAmountChange"
     />
-    <div class="spaceSty" />
-    <div class="spaceSty">can borrow: {{ canBorrow }}(USDT)</div>
+    <div>can borrow: {{ canBorrow }}</div>
     <div class="spaceSty" />
     <Space :size="16">
-      <Button type="primary" size="large" @click="approveBorrowDeposit">
+      <Button type="primary" size="large" @click="lendApprove">
         Approve
       </Button>
-      <Button type="primary" size="large" @click="BorrowDeposit">
-        BorrowDeposit
+      <Button type="primary" size="large" @click="lendDeposit">
+        Deposit
       </Button>
+      <Button type="primary" size="large" @click="lendBorrow"> Borrow </Button>
     </Space>
   </Modal>
 </template>
@@ -329,9 +328,10 @@ import Records from "@/views/components/Records.vue";
 import BigNumber from "bignumber.js";
 import Erc20Abi from "@/utils/erc20.abi.json";
 import ManageAbi from "@/utils/manageAbi.abi.json";
-import Psc from "@/utils/psc.abi.json";
 import InfoAbi from "@/utils/info.abi.json";
-import LendingPoolFarmAbi from "@/utils/lendingPool_mara_farm.abi.json";
+import MockPriceOracleAbi from "@/utils/MockPriceOracle_metadata.abi.json";
+import PoolConfigurationAbi from "@/utils/PoolConfiguration_metadata.abi.json";
+import LendingPoolAbi from "@/utils/LendingPool_metadata.abi.json";
 import AlphaReleaseRuleSelectorAbi from "@/utils/AlphaReleaseRuleSelector_metadata.json";
 import FarmBase from "@/utils/farmBase.abi.json";
 import AlpAbi from "@/utils/alp.abi.json";
@@ -344,6 +344,8 @@ const shareContract = ref(getGlobalContract.shareContract);
 const pscContract = ref(getGlobalContract.pscContract);
 const usdaContract = ref(getGlobalContract.usdaContract);
 const infoContract = ref(getGlobalContract.infoContract);
+const oracleContract = ref(getGlobalContract.oracleContract);
+const lendpoolContract = ref(getGlobalContract.lendpoolContract);
 const farmPoolContract = ref(getGlobalContract.farmPoolContract);
 const alphaReleaseRuleSelectorContract = ref(
   getGlobalContract.alphaReleaseRuleSelectorContract
@@ -380,11 +382,11 @@ const columns = [
     keys: "withdrawOperation",
     dataIndex: "borrowOperation",
   },
-  // {
-  //   title: "BorrowOperation",
-  //   keys: "borrowOperation",
-  //   dataIndex: "borrowOperation",
-  // },
+  {
+    title: "BorrowOperation",
+    keys: "borrowOperation",
+    dataIndex: "borrowOperation",
+  },
 ];
 
 const address = ref<string>("");
@@ -414,16 +416,16 @@ const canBorrowAmount = ref<string | number>("");
 const liquidateAddress = ref<string | number>("");
 const cycle = ref<string | number>("");
 
-const alpBalance = ref<string | number>("0");
-const borrowToken = ref<string | number>(usdaContract.value);
+const borrowToken = ref<string | number>("");
+const borrowTokenAmount = ref<string | number>("");
 const BorrowDepositAmount = ref<string | number>("");
-const maxBorrow = ref<string | number>("--");
 const canBorrow = ref<string | number>("--");
 
 const lpAmountTotal = ref<any>();
 const lpTokenPrice = ref<any>();
 const lendingPoolCollateralPercent = ref<any>();
 const totalSupply = ref<any>();
+const borrowTokenData = ref<any>([]);
 
 //后期需要调整
 const testNeedToRepay = ref<string | number>("");
@@ -437,49 +439,126 @@ const connectClick = () => {
   relWeb3.value = RelWeb3;
   relWeb3.value.eth
     .requestAccounts()
-    .then(async (res: any) => {
-      address.value = res[0];
-      getContracts().then(async (response) => {
-        let res = response.data.result;
-        let contract: any = {};
-        if (res.records) {
-          res.records.map((item: any) => {
-            contract[item.name] = item.address;
-            switch (item.name) {
-              case "manageContract":
-                manageContract.value = item.address;
-                break;
-              case "shareContract":
-                shareContract.value = item.address;
-                break;
-              case "pscContract":
-                pscContract.value = item.address;
-                break;
-              case "usdaContract":
-                usdaContract.value = item.address;
-                break;
-              case "infoContract":
-                infoContract.value = item.address;
-                break;
-              case "farmPoolContract":
-                farmPoolContract.value = item.address;
-                break;
-              case "alphaReleaseRuleSelectorContract":
-                alphaReleaseRuleSelectorContract.value = item.address;
-                break;
-            }
-          });
-          await store.dispatch("setGlobalContractActions", contract);
-          getBalanceOf(RelWeb3, address.value);
-          showCoinBtn.value = true;
-        }
-      });
+    .then(async (ress: any) => {
+      address.value = ress[0];
+      let response = await getContracts();
+      let res = response.data.result;
+      let contract: any = {};
+      if (res.records) {
+        res.records.map((item: any) => {
+          contract[item.name] = item.address;
+          switch (item.name) {
+            case "manageContract":
+              manageContract.value = item.address;
+              break;
+            case "lendpoolContract":
+              lendpoolContract.value = item.address;
+              break;
+            case "shareContract":
+              shareContract.value = item.address;
+              break;
+            case "pscContract":
+              pscContract.value = item.address;
+              break;
+            case "usdaContract":
+              usdaContract.value = item.address;
+              break;
+            case "oracleContract":
+              oracleContract.value = item.address;
+              break;
+            case "infoContract":
+              infoContract.value = item.address;
+              break;
+            case "farmPoolContract":
+              farmPoolContract.value = item.address;
+              break;
+            case "alphaReleaseRuleSelectorContract":
+              alphaReleaseRuleSelectorContract.value = item.address;
+              break;
+          }
+        });
+        await store.dispatch("setGlobalContractActions", contract);
+        getBalanceOf(RelWeb3, address.value);
+        showCoinBtn.value = true;
+        //遍历生成所有lend币种数组
+        getBorrowToken(response);
+      }
       getBalanceOf(RelWeb3, address.value);
       showCoinBtn.value = true;
     })
     .catch((err: any) => {
       message.error(err.message);
     });
+};
+
+const getBorrowToken = async (lengthRes: any) => {
+  let length = 0;
+  let lengthResponse = lengthRes.data.result;
+  lengthResponse?.records &&
+    lengthResponse.records.map((item: any) => {
+      if (item.name === "tokenListLength") {
+        length = item.address;
+      }
+    });
+  let dataArr = [];
+  for (let i = 0; i < length; i++) {
+    dataArr.push(i);
+  }
+  let deepData: any = [];
+  dataArr.map((item, index) => {
+    deepData.push({
+      key: item,
+      index: index,
+      assets: "",
+      assetPrice: "",
+      contract: "",
+    });
+  });
+  borrowTokenData.value = _.cloneDeep(deepData);
+  let Contract = new relWeb3.value.eth.Contract(
+    LendingPoolAbi as any,
+    lendpoolContract.value
+  );
+  let MockPriceOracleContract = new relWeb3.value.eth.Contract(
+    MockPriceOracleAbi as any,
+    oracleContract.value
+  );
+  for (let item of borrowTokenData.value) {
+    let itemContract = await Contract.methods
+      .tokenList(item.index)
+      .call((err: any, result: any) => {
+        if (!err) {
+          return result;
+        } else {
+          return "--";
+        }
+      });
+    item.contract = itemContract;
+    let Erc20Contract = new relWeb3.value.eth.Contract(
+      Erc20Abi as any,
+      itemContract
+    );
+    let name = await Erc20Contract.methods
+      .name()
+      .call((err: any, result: any) => {
+        if (!err) {
+          return result;
+        } else {
+          return "--";
+        }
+      });
+    item.assets = name;
+    let AssetPrice = await MockPriceOracleContract.methods
+      .getAssetPrice(item.contract)
+      .call((err: any, result: any) => {
+        if (!err) {
+          return result;
+        } else {
+          return "--";
+        }
+      });
+    item.assetPrice = AssetPrice;
+  }
 };
 
 //Lend fun
@@ -961,39 +1040,14 @@ const withdrawModalHandleCancel = () => {
 const showBorrowDepositModal = async (item: any) => {
   borrowDepositVisible.value = true;
   chooseItem.value = item;
-  //获取ALP balance
-  let Contract = new relWeb3.value.eth.Contract(
-    Erc20Abi as any,
-    shareContract.value
-  );
-  let resBalance = await Contract.methods
-    .balanceOf(address.value)
-    .call((err: any, result: any) => {
-      if (!err) {
-        return result;
-      } else {
-        return "--";
-      }
-    });
-  let ALPBalance = new BigNumber(resBalance).toFixed(4);
-  alpBalance.value = ALPBalance;
-
-  let lendingPoolContract = new relWeb3.value.eth.Contract(
-    LendingPoolFarmAbi as any,
-    farmPoolContract.value
-  );
-  let PscContract = new relWeb3.value.eth.Contract(
-    Psc as any,
-    pscContract.value,
+  let FarmBaseContract = new relWeb3.value.eth.Contract(
+    FarmBase as any,
+    item.poolInfos.farmAddress,
     {
       from: address.value,
     }
   );
-  let alpContract = new relWeb3.value.eth.Contract(
-    Erc20Abi as any,
-    shareContract.value
-  );
-  let LpAmountTotal = await PscContract.methods
+  let LpAmountTotal = await FarmBaseContract.methods
     .lpAmountTotal()
     .call((err: any, result: any) => {
       if (!err) {
@@ -1003,7 +1057,7 @@ const showBorrowDepositModal = async (item: any) => {
       }
     });
   lpAmountTotal.value = LpAmountTotal;
-  let LpTokenPrice = await PscContract.methods
+  let LpTokenPrice = await FarmBaseContract.methods
     .getLpTokenPrice()
     .call((err: any, result: any) => {
       if (!err) {
@@ -1013,8 +1067,12 @@ const showBorrowDepositModal = async (item: any) => {
       }
     });
   lpTokenPrice.value = LpTokenPrice;
-  let LendingPoolCollateralPercent = await lendingPoolContract.methods
-    .getCollateralPercent(shareContract.value)
+  let lendingPoolContract = new relWeb3.value.eth.Contract(
+    LendingPoolAbi as any,
+    lendpoolContract.value
+  );
+  let resGetPoolBalance = await lendingPoolContract.methods
+    .pools(item.poolInfos.lpToken)
     .call((err: any, result: any) => {
       if (!err) {
         return result;
@@ -1022,7 +1080,24 @@ const showBorrowDepositModal = async (item: any) => {
         return "--";
       }
     });
-  lendingPoolCollateralPercent.value = LendingPoolCollateralPercent;
+  let poolConfigContract = new relWeb3.value.eth.Contract(
+    PoolConfigurationAbi as any,
+    resGetPoolBalance.poolConfig
+  );
+  let collateralPercent = await poolConfigContract.methods
+    .collateralPercent()
+    .call((err: any, result: any) => {
+      if (!err) {
+        return result;
+      } else {
+        return "--";
+      }
+    });
+  lendingPoolCollateralPercent.value = collateralPercent;
+  let alpContract = new relWeb3.value.eth.Contract(
+    Erc20Abi as any,
+    shareContract.value
+  );
   let TotalSupply = await alpContract.methods
     .totalSupply()
     .call((err: any, result: any) => {
@@ -1033,13 +1108,35 @@ const showBorrowDepositModal = async (item: any) => {
       }
     });
   totalSupply.value = TotalSupply;
-  maxBorrow.value = new BigNumber(ALPBalance)
-    .multipliedBy(new BigNumber(LpAmountTotal))
-    .multipliedBy(new BigNumber(LpTokenPrice))
-    .multipliedBy(new BigNumber(LendingPoolCollateralPercent))
-    .dividedBy(new BigNumber(TotalSupply))
-    .dividedBy(new BigNumber(Math.pow(10, 36)))
+};
+
+const borrowTokenChange = (e: Event) => {
+  let assetPrice = 0;
+  borrowTokenData.value.map((item: any) => {
+    if (item.contract === (e.target as HTMLInputElement).value) {
+      assetPrice = item.assetPrice;
+      borrowToken.value = item.contract;
+    }
+  });
+  borrowTokenAmount.value = assetPrice;
+  canBorrow.value = new BigNumber(BorrowDepositAmount.value)
+    .multipliedBy(new BigNumber(lpAmountTotal.value))
+    .dividedBy(new BigNumber(totalSupply.value))
+    .multipliedBy(new BigNumber(lpTokenPrice.value))
+    .multipliedBy(new BigNumber(lendingPoolCollateralPercent.value))
+    .dividedBy(assetPrice)
     .toFixed(4);
+};
+
+const BorrowDepositAmountChange = (e: Event) => {
+  BorrowDepositAmount.value = (e.target as HTMLInputElement).value;
+  canBorrow.value = new BigNumber((e.target as HTMLInputElement).value)
+    .multipliedBy(new BigNumber(lpAmountTotal.value))
+    .dividedBy(new BigNumber(totalSupply.value))
+    .multipliedBy(new BigNumber(lpTokenPrice.value))
+    .multipliedBy(new BigNumber(lendingPoolCollateralPercent.value))
+    .dividedBy(borrowTokenAmount.value)
+    .toFixed(18);
 };
 
 const BorrowDepositModalHandleOk = () => {
@@ -1106,9 +1203,13 @@ const deposit = async () => {
 };
 
 const earn = async () => {
-  let Contract = new relWeb3.value.eth.Contract(Psc as any, pscContract.value, {
-    from: address.value,
-  });
+  let Contract = new relWeb3.value.eth.Contract(
+    FarmBase as any,
+    pscContract.value,
+    {
+      from: address.value,
+    }
+  );
   Contract.methods
     .earn()
     .send({ from: address.value }, (err: any, result: any) => {
@@ -1276,181 +1377,17 @@ const showTabPane = async (item: any) => {
   }
 };
 
-const approveBorrow = async () => {
+const lendApprove = async () => {
   let Contract = new relWeb3.value.eth.Contract(
     Erc20Abi as any,
-    shareContract.value,
+    chooseItem.value.poolInfos.aLPToken,
     {
       from: address.value,
     }
   );
   Contract.methods
     .approve(
-      manageContract.value,
-      new BigNumber(borrowAmount.value).multipliedBy(Math.pow(10, 18)).toFixed()
-    )
-    .send({ from: address.value }, (err: any, result: any) => {
-      if (err) {
-        message.error(JSON.stringify(err.message));
-      } else {
-        message.success(JSON.stringify(result));
-      }
-    });
-};
-
-const borrow = async () => {
-  let Contract = new relWeb3.value.eth.Contract(
-    ManageAbi as any,
-    manageContract.value,
-    {
-      from: address.value,
-    }
-  );
-  let gasPrice = await relWeb3.value.eth.getGasPrice(); //获取当前gas价格
-  //borrow参数: 1.第0个币种,2.金额
-  Contract.methods
-    .borrow(
-      0,
-      new BigNumber(borrowAmount.value).multipliedBy(Math.pow(10, 18)).toFixed()
-    )
-    .send(
-      {
-        from: address.value,
-        gasPrice: gasPrice,
-        gas: relWeb3.value.utils.toHex(900000),
-      },
-      (err: any, result: any) => {
-        if (err) {
-          message.error(JSON.stringify(err.message));
-        } else {
-          message.success(result);
-        }
-      }
-    );
-};
-
-const approveRepay = async () => {
-  let Contract = new relWeb3.value.eth.Contract(
-    Erc20Abi as any,
-    usdaContract.value,
-    {
-      from: address.value,
-    }
-  );
-  Contract.methods
-    .approve(manageContract.value, testNeedToRepay.value)
-    .send({ from: address.value }, (err: any, result: any) => {
-      if (err) {
-        message.error(JSON.stringify(err.message));
-      } else {
-        message.success(result);
-      }
-    });
-};
-
-const approveUSDA = async () => {
-  let Contract = new relWeb3.value.eth.Contract(
-    ManageAbi as any,
-    manageContract.value,
-    {
-      from: address.value,
-    }
-  );
-  let gasPrice = await relWeb3.value.eth.getGasPrice(); //获取当前gas价格
-  Contract.methods.repay(0, true).send(
-    {
-      from: address.value,
-      gasPrice: gasPrice,
-      gas: relWeb3.value.utils.toHex(900000),
-    },
-    (err: any, result: any) => {
-      if (err) {
-        message.error(JSON.stringify(err.message));
-      } else {
-        message.success(result);
-      }
-    }
-  );
-};
-
-const repay = async () => {
-  let Contract = new relWeb3.value.eth.Contract(
-    ManageAbi as any,
-    manageContract.value,
-    {
-      from: address.value,
-    }
-  );
-  let gasPrice = await relWeb3.value.eth.getGasPrice(); //获取当前gas价格
-  Contract.methods.repay(0, false).send(
-    {
-      from: address.value,
-      gasPrice: gasPrice,
-      gas: relWeb3.value.utils.toHex(900000),
-    },
-    (err: any, result: any) => {
-      if (err) {
-        message.error(JSON.stringify(err.message));
-      } else {
-        message.success(result);
-      }
-    }
-  );
-};
-
-const shareTokenChange = async (e: Event) => {
-  borrowAmount.value = (e.target as HTMLInputElement).value;
-  if ((e.target as HTMLInputElement).value) {
-    let Contract = new relWeb3.value.eth.Contract(
-      ManageAbi as any,
-      manageContract.value,
-      {
-        from: address.value,
-      }
-    );
-    let canBorrowRes = await Contract.methods
-      .getCanBorrow(
-        0,
-        new BigNumber((e.target as HTMLInputElement).value)
-          .multipliedBy(Math.pow(10, 18))
-          .toFixed(),
-        1
-      )
-      .call((err: any, result: any) => {
-        if (!err) {
-          return result;
-        } else {
-          return "--";
-        }
-      });
-    canBorrowAmount.value = new BigNumber(canBorrowRes)
-      .dividedBy(Math.pow(10, 18))
-      .toFixed(4);
-  }
-};
-
-const BorrowDepositAmountChange = (e: Event) => {
-  BorrowDepositAmount.value = (e.target as HTMLInputElement).value;
-  canBorrow.value = new BigNumber((e.target as HTMLInputElement).value)
-    .multipliedBy(new BigNumber(lpAmountTotal.value))
-    .multipliedBy(new BigNumber(lpTokenPrice.value))
-    .multipliedBy(new BigNumber(lendingPoolCollateralPercent.value))
-    .dividedBy(new BigNumber(totalSupply.value))
-    .dividedBy(new BigNumber(Math.pow(10, 18)))
-    .toFixed(4);
-};
-
-const approveBorrowDeposit = async () => {
-  let Contract = new relWeb3.value.eth.Contract(
-    Erc20Abi as any,
-    shareContract.value,
-    {
-      from: address.value,
-    }
-  );
-  Contract.methods
-    .approve(
-      manageContract.value,
+      lendpoolContract.value,
       new BigNumber(BorrowDepositAmount.value)
         .multipliedBy(Math.pow(10, 18))
         .toFixed()
@@ -1464,10 +1401,43 @@ const approveBorrowDeposit = async () => {
     });
 };
 
-const BorrowDeposit = async () => {
+const lendDeposit = async () => {
   let Contract = new relWeb3.value.eth.Contract(
-    ManageAbi as any,
-    manageContract.value,
+    LendingPoolAbi as any,
+    lendpoolContract.value,
+    {
+      from: address.value,
+    }
+  );
+  let gasPrice = await relWeb3.value.eth.getGasPrice(); //获取当前gas价格
+  //deposit参数: 1.第0个币种,2.金额
+  Contract.methods
+    .deposit(
+      chooseItem.value.poolInfos.aLPToken,
+      new BigNumber(BorrowDepositAmount.value)
+        .multipliedBy(Math.pow(10, 18))
+        .toFixed()
+    )
+    .send(
+      {
+        from: address.value,
+        gasPrice: gasPrice,
+        gas: relWeb3.value.utils.toHex(900000),
+      },
+      (err: any, result: any) => {
+        if (err) {
+          message.error(JSON.stringify(err.message));
+        } else {
+          message.success(JSON.stringify(result));
+        }
+      }
+    );
+};
+
+const lendBorrow = async () => {
+  let Contract = new relWeb3.value.eth.Contract(
+    LendingPoolAbi as any,
+    lendpoolContract.value,
     {
       from: address.value,
     }
@@ -1475,12 +1445,9 @@ const BorrowDeposit = async () => {
   let gasPrice = await relWeb3.value.eth.getGasPrice(); //获取当前gas价格
   //borrow参数: 1.第0个币种,2.金额
   Contract.methods
-    .borrowDeposit(
-      0,
-      new BigNumber(BorrowDepositAmount.value)
-        .multipliedBy(Math.pow(10, 18))
-        .toFixed(),
-      borrowToken.value
+    .borrow(
+      borrowToken.value,
+      new BigNumber(canBorrow.value).multipliedBy(Math.pow(10, 18)).toFixed()
     )
     .send(
       {
