@@ -50,6 +50,16 @@
           }}%
         </div>
       </template>
+      <template v-if="column.keys === 'depositAPR'">
+        <div>
+          {{ new BigNumber(record?.depositAPR).multipliedBy(100).toFixed(2) }}%
+        </div>
+      </template>
+      <template v-if="column.keys === 'borrowAPR'">
+        <div>
+          {{ new BigNumber(record?.borrowAPR).multipliedBy(100).toFixed(2) }}%
+        </div>
+      </template>
       <template v-if="column.keys === 'claim'">
         <Button type="primary" size="large" @click="() => claim()">
           claim
@@ -310,6 +320,14 @@
       @change="(e) => (LendBorrowAmount = e.target.value)"
     />
     <div class="spaceSty" />
+    <p>
+      MAXBorrow:
+      {{
+        new BigNumber(totalCollateralBalanceBase)
+          .dividedBy(chooseItem.assetPrice)
+          .toFixed(4)
+      }}
+    </p>
     <p>Liquidity: {{ chooseItem.liquidityBalance }}</p>
     <p>
       Borrow Balance:
@@ -342,6 +360,8 @@
       @change="(e) => (LendWithdrawAmount = e.target.value)"
     />
     <div class="spaceSty" />
+    <div>MAX: {{ chooseItem.liquidityBalance }}</div>
+    <div class="spaceSty" />
     <Button type="primary" size="large" @click="lendWithdraw">
       withdraw
     </Button>
@@ -360,6 +380,15 @@
       :value="LendRepayAmount"
       @change="(e) => (LendRepayAmount = e.target.value)"
     />
+    <div class="spaceSty" />
+    <div>
+      MAX:
+      {{
+        new BigNumber(chooseItem.borrowShares)
+          .dividedBy(Math.pow(10, 18))
+          .toFixed(4)
+      }}
+    </div>
     <div class="spaceSty" />
     <Button type="primary" size="large" @click="lendApproveRepay">
       approveRepay
@@ -404,6 +433,16 @@ const columns = [
     title: "APR",
     keys: "APR",
     dataIndex: "APR",
+  },
+  {
+    title: "DepositAPR",
+    keys: "depositAPR",
+    dataIndex: "depositAPR",
+  },
+  {
+    title: "BorrowAPR",
+    keys: "borrowAPR",
+    dataIndex: "borrowAPR",
   },
   {
     title: "TotalLiquidity",
@@ -473,12 +512,13 @@ const depositVisible = ref<boolean>(false);
 const modalTitle = ref<string | number>("deposit");
 const borrowVisible = ref<boolean>(false);
 const borrowModalTitle = ref<string | number>("borrow");
+const totalCollateralBalanceBase = ref<string | number>("0");
 const chooseItem = ref<any>({});
 const withdrawVisible = ref<boolean>(false);
 const withdrawModalTitle = ref<string | number>("withdraw");
 const LendWithdrawAmount = ref<string | number>("");
 const RepayVisible = ref<boolean>(false);
-const RepayModalTitle = ref<string | number>("withdraw");
+const RepayModalTitle = ref<string | number>("repay");
 const LendRepayAmount = ref<string | number>("");
 const BorrowBalance = ref<string | number>("0");
 
@@ -486,6 +526,22 @@ onMounted(() => {
   refresh();
 });
 const refresh = async () => {
+  //获取用户借贷基本信息
+  let lendingPoolContract = new props.relWeb3.eth.Contract(
+    LendingPoolAbi as any,
+    lendpoolContract
+  );
+  let userAccount = await lendingPoolContract.methods
+    .getUserAccount(props.address)
+    .call((err: any, result: any) => {
+      if (!err) {
+        return result;
+      } else {
+        return "--";
+      }
+    });
+  totalCollateralBalanceBase.value = userAccount.totalCollateralBalanceBase;
+  //获取表格数据
   let length = 0;
   let lengthRes = await getContracts();
   let lengthResponse = lengthRes.data.result;
@@ -507,15 +563,19 @@ const refresh = async () => {
       assets: "",
       liquidityBalance: 0,
       APR: 0,
+      depositAPR: 0,
+      borrowAPR: 0,
       borrowBalance: "0",
       walletBalance: "0",
       optimalUtilizationRate: "0",
       totalLiquidity: "0",
       totalAvailableLiquidity: "0",
+      totalBorrowInUSD: "",
       depoistReward: "0",
       borrowReward: "0",
       userUsePoolAsCollateral: false,
       contract: "", //token合约地址
+      assetPrice: "", //token价格
       abi: Erc20Abi,
       borrowShares: "",
       disableUseAsCollateral: "",
@@ -528,6 +588,31 @@ const refresh = async () => {
     LendingPoolAbi as any,
     lendpoolContract
   );
+  let allTotalBorrowInUSD = "0";
+  for (let item of dataArr) {
+    let itemContract = await Contract.methods
+      .tokenList(item)
+      .call((err: any, result: any) => {
+        if (!err) {
+          return result;
+        } else {
+          return "--";
+        }
+      });
+    let totalBorrowInUSD = await Contract.methods
+      .totalBorrowInUSD(itemContract)
+      .call((err: any, result: any) => {
+        if (!err) {
+          return result;
+        } else {
+          return "--";
+        }
+      });
+    allTotalBorrowInUSD = new BigNumber(allTotalBorrowInUSD)
+      .plus(totalBorrowInUSD)
+      .toFixed();
+  }
+  console.log("allTotalBorrowInUSD", allTotalBorrowInUSD);
   data.value = _.cloneDeep(deepData);
   for (let item of data.value) {
     let itemContract = await Contract.methods
@@ -540,6 +625,31 @@ const refresh = async () => {
         }
       });
     item.contract = itemContract;
+    let totalBorrowInUSD = await Contract.methods
+      .totalBorrowInUSD(itemContract)
+      .call((err: any, result: any) => {
+        if (!err) {
+          return result;
+        } else {
+          return "--";
+        }
+      });
+    console.log("totalBorrowInUSD", totalBorrowInUSD);
+    item.totalBorrowInUSD = totalBorrowInUSD;
+    let MockPriceOracleContract = new props.relWeb3.eth.Contract(
+      MockPriceOracleAbi as any,
+      oracleContract
+    );
+    let assetPrice = await MockPriceOracleContract.methods
+      .getAssetPrice(itemContract)
+      .call((err: any, result: any) => {
+        if (!err) {
+          return result;
+        } else {
+          return "--";
+        }
+      });
+    item.assetPrice = assetPrice;
     let Erc20Contract = new props.relWeb3.eth.Contract(
       Erc20Abi as any,
       itemContract
@@ -584,7 +694,6 @@ const refresh = async () => {
     item.borrowShares = userpooldata.borrowShares;
     item.disableUseAsCollateral = userpooldata.disableUseAsCollateral;
     item.latestMultiplier = userpooldata.latestMultiplier;
-
     let totalLiquidity = await Contract.methods
       .getTotalLiquidity(item.contract)
       .call((err: any, result: any) => {
@@ -711,6 +820,19 @@ const refresh = async () => {
           return "--";
         }
       });
+    // let utilizationRate = await poolConfigContract.methods
+    //   .getUtilizationRate(resGetPoolBalance.totalBorrows, aprTotalLiquidity)
+    //   .call((err: any, result: any) => {
+    //     if (!err) {
+    //       return result;
+    //     } else {
+    //       return "--";
+    //     }
+    //   });
+    item.APR = rate;
+    // item.utilizationRate = utilizationRate;
+
+    //获取deposit APR和 borrow APR
     let utilizationRate = await poolConfigContract.methods
       .getUtilizationRate(resGetPoolBalance.totalBorrows, aprTotalLiquidity)
       .call((err: any, result: any) => {
@@ -720,8 +842,53 @@ const refresh = async () => {
           return "--";
         }
       });
-    item.APR = rate;
-    item.utilizationRate = utilizationRate;
+    let optimal = await poolConfigContract.methods
+      .getOptimalUtilizationRate()
+      .call((err: any, result: any) => {
+        if (!err) {
+          return result;
+        } else {
+          return "--";
+        }
+      });
+    if (utilizationRate <= optimal) {
+      let depositAPR =
+        Number(optimal) === 0
+          ? 0
+          : new BigNumber(utilizationRate)
+              .dividedBy(new BigNumber(optimal))
+              .multipliedBy(0.5)
+              .toFixed(4);
+      let borrowAPR = new BigNumber(1).minus(depositAPR).toFixed(4);
+      item.depositAPR = new BigNumber(depositAPR)
+        .multipliedBy(item.totalBorrowInUSD)
+        .dividedBy(allTotalBorrowInUSD)
+        .toFixed(4);
+      item.borrowAPR = new BigNumber(borrowAPR)
+        .multipliedBy(item.totalBorrowInUSD)
+        .dividedBy(allTotalBorrowInUSD)
+        .toFixed(4);
+    } else {
+      let depositAPR =
+        utilizationRate > Math.pow(10, 18)
+          ? 0.5
+          : new BigNumber(0.5).multipliedBy(
+              new BigNumber(0.5)
+                .multipliedBy(new BigNumber(Math.pow(10, 18)))
+                .multipliedBy(
+                  new BigNumber(utilizationRate)
+                    .minus(new BigNumber(optimal))
+                    .dividedBy(
+                      new BigNumber(Math.pow(10, 18)).minus(
+                        new BigNumber(optimal)
+                      )
+                    )
+                )
+            );
+      let borrowAPR = new BigNumber(1).minus(depositAPR).toFixed(4);
+      item.depositAPR = depositAPR;
+      item.borrowAPR = borrowAPR;
+    }
     //获取baseBorrowRate
     let baseBorrowRate = await poolConfigContract.methods
       .baseBorrowRate()
@@ -852,6 +1019,7 @@ const refresh = async () => {
       item.maContractRewardTokenBalance = maContractRewardTokenBalance;
     }
   }
+  console.log("allTotalBorrowInUSD", allTotalBorrowInUSD);
 };
 
 const clickSwitch = async (item: any) => {
@@ -911,22 +1079,9 @@ const openBorrowModal = async (item: any) => {
         return "--";
       }
     });
-  let MockPriceOracleContract = new props.relWeb3.eth.Contract(
-    MockPriceOracleAbi as any,
-    oracleContract
-  );
-  let AssetPrice = await MockPriceOracleContract.methods
-    .getAssetPrice(item.contract)
-    .call((err: any, result: any) => {
-      if (!err) {
-        return result;
-      } else {
-        return "--";
-      }
-    });
   let borrowBalance = new BigNumber(balance.totalLiquidityBalanceBase)
     .minus(new BigNumber(balance.totalBorrowBalanceBase).dividedBy(0.75))
-    .dividedBy(new BigNumber(AssetPrice))
+    .dividedBy(new BigNumber(item.assetPrice))
     .toFixed(4);
   BorrowBalance.value = borrowBalance;
 };
@@ -964,7 +1119,7 @@ const claim = async () => {
 };
 
 //打开withdraw弹框
-const openWithdrawModal = (item: any) => {
+const openWithdrawModal = async (item: any) => {
   chooseItem.value = item;
   withdrawVisible.value = true;
 };
