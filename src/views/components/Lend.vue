@@ -599,6 +599,15 @@ const refresh = async () => {
           return "--";
         }
       });
+    let resGetPoolBalance = await Contract.methods
+      .pools(itemContract)
+      .call((err: any, result: any) => {
+        if (!err) {
+          return result;
+        } else {
+          return "--";
+        }
+      });
     let totalBorrowInUSD = await Contract.methods
       .totalBorrowInUSD(itemContract)
       .call((err: any, result: any) => {
@@ -608,11 +617,12 @@ const refresh = async () => {
           return "--";
         }
       });
-    allTotalBorrowInUSD = new BigNumber(allTotalBorrowInUSD)
-      .plus(totalBorrowInUSD)
-      .toFixed();
+    if (resGetPoolBalance.status === "1") {
+      allTotalBorrowInUSD = new BigNumber(allTotalBorrowInUSD)
+        .plus(totalBorrowInUSD)
+        .toFixed();
+    }
   }
-  console.log("allTotalBorrowInUSD", allTotalBorrowInUSD);
   data.value = _.cloneDeep(deepData);
   for (let item of data.value) {
     let itemContract = await Contract.methods
@@ -634,7 +644,6 @@ const refresh = async () => {
           return "--";
         }
       });
-    console.log("totalBorrowInUSD", totalBorrowInUSD);
     item.totalBorrowInUSD = totalBorrowInUSD;
     let MockPriceOracleContract = new props.relWeb3.eth.Contract(
       MockPriceOracleAbi as any,
@@ -681,7 +690,6 @@ const refresh = async () => {
       .dividedBy(Math.pow(10, 18))
       .toFixed(4);
     item.userUsePoolAsCollateral = res.userUsePoolAsCollateral;
-
     let userpooldata = await Contract.methods
       .userPoolData(props.address, item.contract)
       .call((err: any, result: any) => {
@@ -744,7 +752,6 @@ const refresh = async () => {
         }
       });
     item.lendpoolMaraBalance = lendpoolInfoMaraBalance;
-
     //获取maToken mara余额
     let maTokenMaraBalance = await MaraContract.methods
       .balanceOf(resGetPoolBalance?.maToken)
@@ -756,7 +763,6 @@ const refresh = async () => {
         }
       });
     item.maTokenMaraBalance = maTokenMaraBalance;
-
     //获取lendingPool mara余额
     let lendpoolMaraBalance = await MaraContract.methods
       .balanceOf(lendpoolContract)
@@ -811,83 +817,77 @@ const refresh = async () => {
       PoolConfigurationAbi as any,
       resGetPoolBalance.poolConfig
     );
-    let rate = await poolConfigContract.methods
-      .calculateInterestRate(resGetPoolBalance.totalBorrows, aprTotalLiquidity)
-      .call((err: any, result: any) => {
-        if (!err) {
-          return result;
-        } else {
-          return "--";
-        }
-      });
-    // let utilizationRate = await poolConfigContract.methods
-    //   .getUtilizationRate(resGetPoolBalance.totalBorrows, aprTotalLiquidity)
-    //   .call((err: any, result: any) => {
-    //     if (!err) {
-    //       return result;
-    //     } else {
-    //       return "--";
-    //     }
-    //   });
-    item.APR = rate;
-    // item.utilizationRate = utilizationRate;
-
-    //获取deposit APR和 borrow APR
-    let utilizationRate = await poolConfigContract.methods
-      .getUtilizationRate(resGetPoolBalance.totalBorrows, aprTotalLiquidity)
-      .call((err: any, result: any) => {
-        if (!err) {
-          return result;
-        } else {
-          return "--";
-        }
-      });
-    let optimal = await poolConfigContract.methods
-      .getOptimalUtilizationRate()
-      .call((err: any, result: any) => {
-        if (!err) {
-          return result;
-        } else {
-          return "--";
-        }
-      });
-    if (utilizationRate <= optimal) {
-      let depositAPR =
-        Number(optimal) === 0
-          ? 0
-          : new BigNumber(utilizationRate)
-              .dividedBy(new BigNumber(optimal))
-              .multipliedBy(0.5)
-              .toFixed(4);
-      let borrowAPR = new BigNumber(1).minus(depositAPR).toFixed(4);
-      item.depositAPR = new BigNumber(depositAPR)
-        .multipliedBy(item.totalBorrowInUSD)
-        .dividedBy(allTotalBorrowInUSD)
-        .toFixed(4);
-      item.borrowAPR = new BigNumber(borrowAPR)
-        .multipliedBy(item.totalBorrowInUSD)
-        .dividedBy(allTotalBorrowInUSD)
-        .toFixed(4);
-    } else {
-      let depositAPR =
-        utilizationRate > Math.pow(10, 18)
-          ? 0.5
-          : new BigNumber(0.5).multipliedBy(
-              new BigNumber(0.5)
-                .multipliedBy(new BigNumber(Math.pow(10, 18)))
-                .multipliedBy(
-                  new BigNumber(utilizationRate)
-                    .minus(new BigNumber(optimal))
-                    .dividedBy(
-                      new BigNumber(Math.pow(10, 18)).minus(
-                        new BigNumber(optimal)
+    if (Number(resGetPoolBalance.totalBorrows) !== 0) {
+      let rate = await poolConfigContract.methods
+        .calculateInterestRate(
+          resGetPoolBalance.totalBorrows,
+          aprTotalLiquidity
+        )
+        .call((err: any, result: any) => {
+          if (!err) {
+            return result;
+          } else {
+            return "--";
+          }
+        });
+      item.APR = rate;
+      //获取deposit APR和 borrow APR
+      let utilizationRate = await poolConfigContract.methods
+        .getUtilizationRate(resGetPoolBalance.totalBorrows, aprTotalLiquidity)
+        .call((err: any, result: any) => {
+          if (!err) {
+            return result;
+          } else {
+            return "--";
+          }
+        });
+      let optimal = await poolConfigContract.methods
+        .getOptimalUtilizationRate()
+        .call((err: any, result: any) => {
+          if (!err) {
+            return result;
+          } else {
+            return "--";
+          }
+        });
+      if (utilizationRate <= optimal) {
+        let depositAPR =
+          Number(optimal) === 0
+            ? 0
+            : new BigNumber(utilizationRate)
+                .dividedBy(new BigNumber(optimal))
+                .multipliedBy(0.5)
+                .toFixed(4);
+        let borrowAPR = new BigNumber(1).minus(depositAPR).toFixed(4);
+        item.depositAPR = new BigNumber(depositAPR)
+          .multipliedBy(item.totalBorrowInUSD)
+          .dividedBy(allTotalBorrowInUSD)
+          .toFixed(4);
+        item.borrowAPR = new BigNumber(borrowAPR)
+          .multipliedBy(item.totalBorrowInUSD)
+          .dividedBy(allTotalBorrowInUSD)
+          .toFixed(4);
+      } else {
+        let depositAPR =
+          utilizationRate > Math.pow(10, 18)
+            ? 0.5
+            : new BigNumber(0.5).multipliedBy(
+                new BigNumber(0.5)
+                  .multipliedBy(new BigNumber(Math.pow(10, 18)))
+                  .multipliedBy(
+                    new BigNumber(utilizationRate)
+                      .minus(new BigNumber(optimal))
+                      .dividedBy(
+                        new BigNumber(Math.pow(10, 18)).minus(
+                          new BigNumber(optimal)
+                        )
                       )
-                    )
-                )
-            );
-      let borrowAPR = new BigNumber(1).minus(depositAPR).toFixed(4);
-      item.depositAPR = depositAPR;
-      item.borrowAPR = borrowAPR;
+                  )
+              );
+        let borrowAPR = new BigNumber(1).minus(depositAPR).toFixed(4);
+        item.depositAPR = depositAPR;
+        item.borrowAPR = borrowAPR;
+      }
     }
     //获取baseBorrowRate
     let baseBorrowRate = await poolConfigContract.methods
@@ -1019,7 +1019,6 @@ const refresh = async () => {
       item.maContractRewardTokenBalance = maContractRewardTokenBalance;
     }
   }
-  console.log("allTotalBorrowInUSD", allTotalBorrowInUSD);
 };
 
 const clickSwitch = async (item: any) => {

@@ -118,14 +118,13 @@ import {
   Space,
   Popconfirm,
 } from "ant-design-vue";
+import Erc20Abi from "@/utils/erc20.abi.json";
 import {
   getContracts,
   addContracts,
   editContracts,
   deleteContracts,
 } from "@/utils/api";
-const store = useStore();
-import Erc20Abi from "@/utils/erc20.abi.json";
 const MaraVisible = ref<boolean>(false);
 const chooseItem = ref<any>({});
 const maraAddress = ref<string | number>("");
