@@ -19,6 +19,15 @@
 
             <Table :columns="columns" :data-source="data">
               <template #bodyCell="{ column, record }">
+                <template v-if="column.keys === 'claim'">
+                  <Button
+                    type="primary"
+                    size="large"
+                    @click="() => claim(record)"
+                  >
+                    claim
+                  </Button>
+                </template>
                 <template v-if="column.keys === 'depositOperation'">
                   <Button
                     type="primary"
@@ -371,6 +380,11 @@ const columns = [
   {
     title: "Pending reward",
     dataIndex: "pendingReward",
+  },
+  {
+    title: "Claim",
+    keys: "claim",
+    dataIndex: "claim",
   },
   {
     title: "DepositOperation",
@@ -1145,6 +1159,29 @@ const BorrowDepositModalHandleOk = () => {
 
 const BorrowDepositModalHandleCancel = () => {
   borrowDepositVisible.value = false;
+};
+
+const claim = async (item: any) => {
+  let Contract = new relWeb3.value.eth.Contract(
+    ManageAbi as any,
+    manageContract.value
+  );
+  let gasPrice = await relWeb3.value.eth.getGasPrice(); //获取当前gas价格
+  await Contract.methods.claim(item.index).send(
+    {
+      from: address.value,
+      gasPrice: gasPrice,
+      gas: relWeb3.value.utils.toHex(900000),
+    },
+    (err: any, result: any) => {
+      if (!err) {
+        return result;
+      } else {
+        message.error(JSON.stringify(err.message));
+        return "--";
+      }
+    }
+  );
 };
 
 const approve = () => {
