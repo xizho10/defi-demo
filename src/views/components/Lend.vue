@@ -325,6 +325,7 @@
       {{
         new BigNumber(totalCollateralBalanceBase)
           .dividedBy(chooseItem.assetPrice)
+          .minus(totalBorrowBalanceBase)
           .toFixed(4)
       }}
     </p>
@@ -430,6 +431,10 @@ const columns = [
     dataIndex: "assets",
   },
   {
+    title: "AbleBorrow",
+    dataIndex: "ableBorrow",
+  },
+  {
     title: "APR",
     keys: "APR",
     dataIndex: "APR",
@@ -513,6 +518,7 @@ const modalTitle = ref<string | number>("deposit");
 const borrowVisible = ref<boolean>(false);
 const borrowModalTitle = ref<string | number>("borrow");
 const totalCollateralBalanceBase = ref<string | number>("0");
+const totalBorrowBalanceBase = ref<string | number>("0");
 const chooseItem = ref<any>({});
 const withdrawVisible = ref<boolean>(false);
 const withdrawModalTitle = ref<string | number>("withdraw");
@@ -541,6 +547,8 @@ const refresh = async () => {
       }
     });
   totalCollateralBalanceBase.value = userAccount.totalCollateralBalanceBase;
+  totalBorrowBalanceBase.value = userAccount.totalBorrowBalanceBase;
+  console.log("userAccount", userAccount);
   //获取表格数据
   let length = 0;
   let lengthRes = await getContracts();
@@ -560,6 +568,7 @@ const refresh = async () => {
     deepData.push({
       index: index,
       key: item,
+      ableBorrow: "",
       assets: "",
       liquidityBalance: 0,
       APR: 0,
@@ -736,6 +745,7 @@ const refresh = async () => {
         }
       });
     item.getPoolBalance = resGetPoolBalance;
+    item.ableBorrow = resGetPoolBalance.ableBorrow.toString();
     let MaraContract = new props.relWeb3.eth.Contract(
       Erc20Abi as any,
       maraContract
