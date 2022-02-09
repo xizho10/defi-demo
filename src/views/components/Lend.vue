@@ -92,6 +92,7 @@
           <Button
             type="primary"
             size="large"
+            v-if="record.ableBorrow === 'true'"
             @click="() => openBorrowModal(record)"
           >
             borrow
@@ -325,7 +326,9 @@
       {{
         new BigNumber(totalCollateralBalanceBase)
           .dividedBy(chooseItem.assetPrice)
-          .minus(totalBorrowBalanceBase)
+          .minus(
+            new BigNumber(totalBorrowBalanceBase).dividedBy(Math.pow(10, 18))
+          )
           .toFixed(4)
       }}
     </p>

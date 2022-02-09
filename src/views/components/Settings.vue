@@ -103,6 +103,12 @@
             :value="setPoolStatusStatus"
             @change="(e:any) => (setPoolStatusStatus = e.target.value)"
           />
+          <Input
+            class="farmInput"
+            placeholder="boolean"
+            :value="setPoolStatusBoolean"
+            @change="(e:any) => (setPoolStatusBoolean = e.target.value)"
+          />
           <Button type="primary" size="large" @click="setPoolStatus">
             setPoolStatus
           </Button>
@@ -172,7 +178,6 @@ import {
   TabPane,
   Input,
 } from "ant-design-vue";
-const store = useStore();
 import _ from "lodash";
 import MockPriceOracleAbi from "@/utils/MockPriceOracle_metadata.abi.json";
 import LendingPoolAbi from "@/utils/LendingPool_metadata.abi.json";
@@ -181,6 +186,7 @@ import ManageAbi from "@/utils/manageAbi.abi.json";
 import ConfigParams from "@/views/components/ConfigParams.vue";
 import Erc20Abi from "@/utils/erc20.abi.json";
 import { getContracts } from "@/utils/api";
+const store = useStore();
 
 const { manageContract, infoContract, lendpoolContract, oracleContract } =
   store.getters.getGlobalContract;
@@ -235,13 +241,14 @@ const lendWithdrawReserveAmount = ref<any>("");
 
 const setPoolStatusToken = ref<any>("");
 const setPoolStatusStatus = ref<any>("");
+const setPoolStatusBoolean = ref<any>("");
 const setPriceOracleAddress = ref<any>("");
 
 onMounted(() => {
   refresh();
 });
 
-const tabsChange = (item: string) => {
+const tabsChange = (item: any) => {
   if (item === "2") {
     refresh();
   }
@@ -485,7 +492,11 @@ const setPoolStatus = async () => {
   );
   let gasPrice = await props.relWeb3.eth.getGasPrice(); //获取当前gas价格
   await lendPoolContract.methods
-    .setPoolStatus(setPoolStatusToken.value, setPoolStatusStatus.value)
+    .setPoolStatus(
+      setPoolStatusToken.value,
+      setPoolStatusStatus.value,
+      setPoolStatusBoolean.value
+    )
     .send(
       {
         from: props.address,
