@@ -92,7 +92,10 @@
           <Button
             type="primary"
             size="large"
-            v-if="record.ableBorrow === 'true'"
+            v-if="
+              record.ableBorrow === 'true' &&
+              Number(record?.liquidityBalance) === 0
+            "
             @click="() => openBorrowModal(record)"
           >
             borrow

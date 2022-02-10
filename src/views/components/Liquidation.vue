@@ -87,6 +87,8 @@ import LendingPoolAbi from "@/utils/LendingPool_metadata.abi.json";
 import BNBTokenAbi from "@/utils/BNBToken_metadata.abi.json";
 import DAITokenAbi from "@/utils/DaiToken_metadata.abi.json";
 import MockPriceOracleAbi from "@/utils/MockPriceOracle_metadata.abi.json";
+import Erc20Abi from "@/utils/erc20.abi.json";
+import { getContracts } from "@/utils/api";
 const store = useStore();
 
 const { lendpoolContract, bnbContract, daiContract, oracleContract } =
@@ -130,89 +132,7 @@ const columns = [
   },
 ];
 
-const Data = [
-  {
-    address: "0xEc7e5638e1b876eD6F3210Ab8A138B9EE993CAcd",
-    coin: "BNB",
-    contract: bnbContract,
-    abi: BNBTokenAbi,
-    cannotLiquidation: true,
-    liquidityBalance: "0",
-    assetPrice: "0",
-    rate: "0",
-  },
-  {
-    address: "0xEc7e5638e1b876eD6F3210Ab8A138B9EE993CAcd",
-    coin: "DAI",
-    contract: daiContract,
-    abi: DAITokenAbi,
-    cannotLiquidation: true,
-    liquidityBalance: "0",
-    assetPrice: "0",
-    rate: "0",
-  },
-  {
-    address: "0x416627dA2AD387EEDCe2835B9450471dcb1A1f45",
-    coin: "BNB",
-    contract: bnbContract,
-    abi: BNBTokenAbi,
-    cannotLiquidation: true,
-    liquidityBalance: "0",
-    assetPrice: "0",
-    rate: "0",
-  },
-  {
-    address: "0x416627dA2AD387EEDCe2835B9450471dcb1A1f45",
-    coin: "DAI",
-    contract: daiContract,
-    abi: DAITokenAbi,
-    cannotLiquidation: true,
-    liquidityBalance: "0",
-    assetPrice: "0",
-    rate: "0",
-  },
-  {
-    address: "0xA2e18718000077758fd90636D84A89f76DDA2BBd",
-    coin: "BNB",
-    contract: bnbContract,
-    abi: BNBTokenAbi,
-    cannotLiquidation: true,
-    liquidityBalance: "0",
-    assetPrice: "0",
-    rate: "0",
-  },
-  {
-    address: "0xA2e18718000077758fd90636D84A89f76DDA2BBd",
-    coin: "DAI",
-    contract: daiContract,
-    abi: DAITokenAbi,
-    cannotLiquidation: true,
-    liquidityBalance: "0",
-    assetPrice: "0",
-    rate: "0",
-  },
-  {
-    address: "0x96a424E5D342e1a57435080Ab0d128EaE2dBa6c6",
-    coin: "BNB",
-    contract: bnbContract,
-    abi: BNBTokenAbi,
-    cannotLiquidation: true,
-    liquidityBalance: "0",
-    assetPrice: "0",
-    rate: "0",
-  },
-  {
-    address: "0x96a424E5D342e1a57435080Ab0d128EaE2dBa6c6",
-    coin: "DAI",
-    contract: daiContract,
-    abi: DAITokenAbi,
-    cannotLiquidation: true,
-    liquidityBalance: "0",
-    assetPrice: "0",
-    rate: "0",
-  },
-];
-const data = ref<any>(Data);
+const data = ref<any>([]);
 const liquidityVisible = ref<boolean>(false);
 const chooseItem = ref<any>({});
 const canShareCoin = ref<string | number>("");
@@ -228,12 +148,76 @@ onMounted(() => {
 });
 
 const refresh = async () => {
-  data.value = _.cloneDeep(Data);
+  let length = 0;
+  let lengthRes = await getContracts();
+  let lengthResponse = lengthRes.data.result;
+  lengthResponse?.records &&
+    lengthResponse.records.map((item: any) => {
+      if (item.name === "tokenListLength") {
+        length = item.address;
+      }
+    });
+  let dataArr = [];
+  for (let i = 0; i < length; i++) {
+    dataArr.push(i);
+  }
+  let deepData: any = [];
+  dataArr.map((item, index) => {
+    deepData.push({
+      key: item,
+      index: index,
+      address: "0xEc7e5638e1b876eD6F3210Ab8A138B9EE993CAcd",
+      coin: "",
+      contract: "",
+      abi: DAITokenAbi,
+      cannotLiquidation: true,
+      liquidityBalance: "0",
+      assetPrice: "0",
+      rate: "0",
+    });
+    deepData.push({
+      key: item,
+      index: index,
+      address: "0xA2e18718000077758fd90636D84A89f76DDA2BBd",
+      coin: "",
+      contract: "",
+      abi: DAITokenAbi,
+      cannotLiquidation: true,
+      liquidityBalance: "0",
+      assetPrice: "0",
+      rate: "0",
+    });
+  });
+  data.value = _.cloneDeep(deepData);
   let Contract = new props.relWeb3.eth.Contract(
     LendingPoolAbi as any,
     lendpoolContract
   );
   for (let item of data.value) {
+    let itemContract = await Contract.methods
+      .tokenList(item.index)
+      .call((err: any, result: any) => {
+        if (!err) {
+          return result;
+        } else {
+          return "--";
+        }
+      });
+    item.contract = itemContract;
+    let Erc20Contract = new props.relWeb3.eth.Contract(
+      Erc20Abi as any,
+      itemContract
+    );
+    let name = await Erc20Contract.methods
+      .name()
+      .call((err: any, result: any) => {
+        if (!err) {
+          return result;
+        } else {
+          return "--";
+        }
+      });
+    item.coin = name;
     let res = await Contract.methods
       .isAccountHealthy(item.address)
       .call((err: any, result: any) => {
