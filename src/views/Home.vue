@@ -921,10 +921,20 @@ const getBalanceOf = async (relWeb3: Web3, address: string) => {
     //         .toFixed(4) + "%";
     item.share = new BigNumber(resShareBalance).toFixed();
     item.totalSupply = shareTotal;
+    //获取farm oracle contract
+    let priceHelperAddress = await farmBaseContract.methods
+      .priceHelperAddress()
+      .call((err: any, result: any) => {
+        if (!err) {
+          return result;
+        } else {
+          return "--";
+        }
+      });
     //获取mara price
     let MockPriceOracleContract = new relWeb3.eth.Contract(
       MockPriceOracleAbi as any,
-      oracleContract.value
+      priceHelperAddress
     );
     let maraPrice = await MockPriceOracleContract.methods
       .getAssetPrice(item.MaraAddress)
@@ -958,7 +968,7 @@ const getBalanceOf = async (relWeb3: Web3, address: string) => {
           )
         )
         .dividedBy(new BigNumber(allTotalInUSD.value))
-        .dividedBy(100)
+        .dividedBy(Math.pow(10, 16))
         .toFixed(4) + "%";
   }
 };
