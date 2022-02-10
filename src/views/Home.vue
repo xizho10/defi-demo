@@ -919,8 +919,12 @@ const getBalanceOf = async (relWeb3: Web3, address: string) => {
     //         .dividedBy(new BigNumber(shareTotal))
     //         .dividedBy(100)
     //         .toFixed(4) + "%";
-    item.share = new BigNumber(resShareBalance).toFixed();
-    item.totalSupply = shareTotal;
+    item.share = new BigNumber(resShareBalance)
+      .dividedBy(Math.pow(10, 18))
+      .toFixed(4);
+    item.totalSupply = new BigNumber(shareTotal)
+      .dividedBy(Math.pow(10, 18))
+      .toFixed(4);
     //获取farm oracle contract
     let priceHelperAddress = await farmBaseContract.methods
       .priceHelperAddress()
