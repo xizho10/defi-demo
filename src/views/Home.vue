@@ -67,9 +67,7 @@
                 <p style="margin: 0">
                   lpToken: {{ record?.poolInfos.lpToken }}
                 </p>
-                <p style="margin: 0">
-                  rewardTokenPerAlp: {{ record?.poolInfos.rewardTokenPerAlp }}
-                </p>
+                <p style="margin: 0">status: {{ record?.poolInfos.status }}</p>
                 <div class="spaceSty" />
                 <p style="margin: 0">
                   entranceFeeFactor: {{ record?.entranceFeeFactor }}
@@ -132,85 +130,6 @@
                 </p>
               </template>
             </Table>
-            <div class="transactionTabs">
-              <Tabs defaultActiveKey="1" @change="showTabPane">
-                <!-- <TabPane tab="Borrow" key="3">
-                    <Space :size="8" direction="vertical">
-                      <div>share token: {{ shareToken }}</div>
-                      <div>borrowed(USDA): {{ usdaBorrowed }}</div>
-                      <div>interest rate: {{ interestRate }}%</div>
-                    </Space>
-                    <Input
-                      class="amountInput"
-                      placeholder="Share token"
-                      :value="borrowAmount"
-                      @change="shareTokenChange"
-                    />
-                    <Input
-                      placeholder="cycle(1-10)"
-                      disabled
-                      :value="cycle"
-                      @change="(e) => (cycle = e.target.value)"
-                    />
-                    <div class="spaceSty">
-                      can borrow {{ canBorrowAmount }}(USDA)
-                    </div>
-                    <Space :size="16">
-                      <Button
-                        type="primary"
-                        size="large"
-                        @click="approveBorrow"
-                      >
-                        Approve
-                      </Button>
-                      <Button type="primary" size="large" @click="borrow">
-                        Borrow
-                      </Button>
-                    </Space>
-                  </TabPane>
-                  <TabPane tab="Repay" key="4">
-                    <Space :size="8" direction="vertical">
-                      <div>share token(collateral): {{ shareTokenRepay }}</div>
-                      <div>need to repay: {{ needToRepay }}</div>
-                    </Space>
-                    <div></div>
-                    <Space direction="vertical" :size="16">
-                      <Space :size="16">
-                        <Button
-                          type="primary"
-                          size="large"
-                          @click="approveRepay"
-                        >
-                          approve USDA
-                        </Button>
-                        <Button
-                          type="primary"
-                          size="large"
-                          @click="approveUSDA"
-                        >
-                          use USDA
-                        </Button>
-                      </Space>
-                      <Button type="primary" size="large" @click="repay">
-                        use LP
-                      </Button>
-                    </Space>
-                  </TabPane> -->
-              </Tabs>
-            </div>
-            <Space direction="vertical" :size="16">
-              <Space :size="16">
-                <Input
-                  class="amountInput"
-                  placeholder="liquidate address"
-                  :value="liquidateAddress"
-                  @change="(e) => (liquidateAddress = e.target.value)"
-                />
-                <Button type="primary" size="large" @click="liquidate"
-                  >Liquidate</Button
-                >
-              </Space>
-            </Space>
           </TabPane>
           <TabPane tab="Lend" key="2">
             <Lend :relWeb3="relWeb3" :address="address" />
@@ -411,33 +330,17 @@ const borrowDepositVisible = ref<boolean>(false);
 const relWeb3 = ref<any>("");
 const showCoinBtn = ref<boolean>(false);
 const maraPerBlock = ref<string | number>("");
-
-const depositBalance = ref<string | number>("--");
-const shareToken = ref<string | number>("");
-const shareTokenRepay = ref<string | number>("");
-const needToRepay = ref<string | number>("");
-const usdaBorrowed = ref<string | number>("");
-const interestRate = ref<string | number>("");
 const amount = ref<string | number>("");
 const withdrawAmount = ref<string | number>("");
-const borrowAmount = ref<string | number>("");
-const canBorrowAmount = ref<string | number>("");
-const liquidateAddress = ref<string | number>("");
-const cycle = ref<string | number>("");
-
 const borrowToken = ref<string | number>("");
 const borrowTokenAmount = ref<string | number>("");
 const BorrowDepositAmount = ref<string | number>("");
 const canBorrow = ref<string | number>("--");
-
 const lpAmountTotal = ref<any>();
 const lpTokenPrice = ref<any>();
 const lendingPoolCollateralPercent = ref<any>();
 const totalSupply = ref<any>();
 const borrowTokenData = ref<any>([]);
-
-//后期需要调整
-const testNeedToRepay = ref<string | number>("");
 
 const connectClick = () => {
   if (!Web3.givenProvider) {
@@ -561,7 +464,6 @@ const getBorrowToken = async (lengthRes: any) => {
   }
 };
 
-//Lend fun
 const farmOrLendOnChange = async (children: any) => {
   if (children === "1") {
     getBalanceOf(relWeb3.value, address.value);
@@ -583,7 +485,6 @@ const farmOrLendOnChange = async (children: any) => {
   }
 };
 
-//Farm fun
 const getBalanceOf = async (relWeb3: Web3, address: string) => {
   let dataArr = [];
   let poolContract = new relWeb3.eth.Contract(
@@ -1158,32 +1059,6 @@ const earn = async (item: any) => {
     });
 };
 
-const liquidate = async () => {
-  let Contract = new relWeb3.value.eth.Contract(
-    ManageAbi as any,
-    manageContract.value,
-    {
-      from: address.value,
-    }
-  );
-  let gasPrice = await relWeb3.value.eth.getGasPrice(); //获取当前gas价格
-  //deposit参数: 1.第0个币种,2.liquidate Address
-  Contract.methods.liquidate(0, liquidateAddress.value).send(
-    {
-      from: address.value,
-      gasPrice: gasPrice,
-      gas: relWeb3.value.utils.toHex(900000),
-    },
-    (err: any, result: any) => {
-      if (err) {
-        message.error(JSON.stringify(err.message));
-      } else {
-        message.success(JSON.stringify(result));
-      }
-    }
-  );
-};
-
 const withdraw = async () => {
   let Contract = new relWeb3.value.eth.Contract(
     ManageAbi as any,
@@ -1216,49 +1091,6 @@ const withdraw = async () => {
         }
       }
     );
-};
-
-const showTabPane = async (item: any) => {
-  if (item === "4") {
-    let InfoContract = new relWeb3.value.eth.Contract(
-      InfoAbi as any,
-      infoContract.value,
-      {
-        from: address.value,
-      }
-    );
-    let borrowedArr = await InfoContract.methods
-      .getUser(0, address.value)
-      .call((err: any, result: any) => {
-        if (!err) {
-          return result;
-        } else {
-          return "--";
-        }
-      });
-    shareTokenRepay.value = new BigNumber(borrowedArr.collateralAmount)
-      .dividedBy(Math.pow(10, 18))
-      .toFixed(4);
-
-    //test利率(后期调整)
-    let interestRateArr = await InfoContract.methods
-      .getPool(0)
-      .call((err: any, result: any) => {
-        if (!err) {
-          return result;
-        } else {
-          return "--";
-        }
-      });
-    needToRepay.value = new BigNumber(borrowedArr.usdaBorrowed)
-      .dividedBy(Math.pow(10, 18))
-      .multipliedBy(new BigNumber(10000).plus(interestRateArr.interestRate))
-      .dividedBy(10000)
-      .toFixed(4);
-    testNeedToRepay.value = new BigNumber(borrowedArr.usdaBorrowed)
-      .multipliedBy(new BigNumber(10000).plus(interestRateArr.interestRate))
-      .toFixed(0);
-  }
 };
 
 const lendApprove = async () => {

@@ -158,7 +158,7 @@ const refresh = () => {
   });
 };
 
-const selectChange = (item: string) => {
+const selectChange = (item: any) => {
   methodType.value = item;
 };
 </script>

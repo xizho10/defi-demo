@@ -420,7 +420,6 @@ import {
 } from "ant-design-vue";
 import _ from "lodash";
 import LendingPoolAbi from "@/utils/LendingPool_metadata.abi.json";
-import BNBTokenAbi from "@/utils/BNBToken_metadata.abi.json";
 import PoolConfigurationAbi from "@/utils/PoolConfiguration_metadata.abi.json";
 import MockPriceOracleAbi from "@/utils/MockPriceOracle_metadata.abi.json";
 import MaTokenMetadataAbi from "@/utils/MaToken_metadata.abi.json";

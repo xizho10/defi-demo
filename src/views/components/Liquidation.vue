@@ -84,15 +84,13 @@ import {
 } from "ant-design-vue";
 import _ from "lodash";
 import LendingPoolAbi from "@/utils/LendingPool_metadata.abi.json";
-import BNBTokenAbi from "@/utils/BNBToken_metadata.abi.json";
 import DAITokenAbi from "@/utils/DaiToken_metadata.abi.json";
 import MockPriceOracleAbi from "@/utils/MockPriceOracle_metadata.abi.json";
 import Erc20Abi from "@/utils/erc20.abi.json";
 import { getContracts } from "@/utils/api";
 const store = useStore();
 
-const { lendpoolContract, bnbContract, daiContract, oracleContract } =
-  store.getters.getGlobalContract;
+const { lendpoolContract, oracleContract } = store.getters.getGlobalContract;
 
 const props = defineProps<{
   relWeb3: any;

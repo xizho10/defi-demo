@@ -28,12 +28,6 @@
           />
           <Input
             class="farmInput"
-            placeholder="uint256_allocPoint"
-            :value="farmAddPoint"
-            @change="(e:any) => (farmAddPoint = e.target.value)"
-          />
-          <Input
-            class="farmInput"
             placeholder="bool_withUpdate"
             :value="farmAddBool"
             @change="(e:any) => (farmAddBool = e.target.value)"
@@ -49,26 +43,32 @@
           >
         </div>
         <div class="spaceSty"></div>
+        <div>
+          <Input
+            class="farmInput"
+            placeholder="uint256 _pid"
+            :value="farmIndex"
+            @change="(e:any) => (farmIndex = e.target.value)"
+          />
+          <Input
+            class="farmInput"
+            placeholder="PoolStatus _status"
+            :value="farmStatus"
+            @change="(e:any) => (farmStatus = e.target.value)"
+          />
+          <Button type="primary" size="large" @click="farmSetPoolStatus">
+            setPoolStatus</Button
+          >
+        </div>
+        <div class="spaceSty"></div>
         <Input
           class="farmInput"
-          placeholder="uint256 _pid"
-          :value="farmSetAllocPointPid"
-          @change="(e:any) => (farmSetAllocPointPid = e.target.value)"
+          placeholder="uint256 _maraPerBlock"
+          :value="maraPerBlock"
+          @change="(e:any) => (maraPerBlock = e.target.value)"
         />
-        <Input
-          class="farmInput"
-          placeholder="uint256_allocPoint"
-          :value="farmSetAllocPointPoint"
-          @change="(e:any) => (farmSetAllocPointPoint = e.target.value)"
-        />
-        <Input
-          class="farmInput"
-          placeholder="bool_withUpdate"
-          :value="farmSetAllocPointBool"
-          @change="(e:any) => (farmSetAllocPointBool = e.target.value)"
-        />
-        <Button type="primary" size="large" @click="setAllocPoint">
-          setAllocPoint
+        <Button type="primary" size="large" @click="setMaraPerBlock">
+          setMaraPerBlock
         </Button>
       </TabPane>
       <TabPane tab="Lend" key="4">
@@ -225,13 +225,8 @@ const assetPrice = ref<string | number>("");
 const chooseItem = ref<any>({});
 
 const farmAddLpToken = ref<any>("");
-const farmAddPoint = ref<any>("");
 const farmAddBool = ref<any>("");
 const farmAddAddress = ref<any>("");
-
-const farmSetAllocPointPid = ref<any>("");
-const farmSetAllocPointPoint = ref<any>("");
-const farmSetAllocPointBool = ref<any>("");
 
 const lendInitPoolToken = ref<any>("");
 const lendInitPoolConfig = ref<any>("");
@@ -243,6 +238,11 @@ const setPoolStatusToken = ref<any>("");
 const setPoolStatusStatus = ref<any>("");
 const setPoolStatusBoolean = ref<any>("");
 const setPriceOracleAddress = ref<any>("");
+
+const maraPerBlock = ref<any>("");
+
+const farmIndex = ref<any>("");
+const farmStatus = ref<any>("");
 
 onMounted(() => {
   refresh();
@@ -376,12 +376,7 @@ const addPool = async () => {
     infoContract
   );
   await InfoContract.methods
-    .add(
-      farmAddLpToken.value,
-      farmAddPoint.value,
-      farmAddBool.value,
-      farmAddAddress.value
-    )
+    .add(farmAddLpToken.value, farmAddBool.value, farmAddAddress.value)
     .send(
       {
         from: props.address,
@@ -400,34 +395,28 @@ const addPool = async () => {
     );
 };
 
-const setAllocPoint = async () => {
+const setMaraPerBlock = async () => {
   let gasPrice = await props.relWeb3.eth.getGasPrice(); //获取当前gas价格
   let ManageContract = new props.relWeb3.eth.Contract(
     ManageAbi as any,
     manageContract
   );
-  await ManageContract.methods
-    .setAllocPoint(
-      farmSetAllocPointPid.value,
-      farmSetAllocPointPoint.value,
-      farmSetAllocPointBool.value
-    )
-    .send(
-      {
-        from: props.address,
-        gasPrice: gasPrice,
-        gas: props.relWeb3.utils.toHex(3000000),
-      },
-      (err: any, result: any) => {
-        Visible.value = false;
-        if (!err) {
-          return result;
-        } else {
-          message.error(JSON.stringify(err.message));
-          return "--";
-        }
+  await ManageContract.methods.setMaraPerBlock(maraPerBlock.value).send(
+    {
+      from: props.address,
+      gasPrice: gasPrice,
+      gas: props.relWeb3.utils.toHex(3000000),
+    },
+    (err: any, result: any) => {
+      Visible.value = false;
+      if (!err) {
+        return result;
+      } else {
+        message.error(JSON.stringify(err.message));
+        return "--";
       }
-    );
+    }
+  );
 };
 
 const initPool = async () => {
@@ -505,6 +494,31 @@ const setPoolStatus = async () => {
       },
       (err: any, result: any) => {
         Visible.value = false;
+        if (!err) {
+          return result;
+        } else {
+          message.error(JSON.stringify(err.message));
+          return "--";
+        }
+      }
+    );
+};
+
+const farmSetPoolStatus = async () => {
+  let InfoContract = new props.relWeb3.eth.Contract(
+    InfoAbi as any,
+    infoContract
+  );
+  let gasPrice = await props.relWeb3.eth.getGasPrice(); //获取当前gas价格
+  await InfoContract.methods
+    .setPoolStatus(farmIndex.value, farmStatus.value)
+    .send(
+      {
+        from: props.address,
+        gasPrice: gasPrice,
+        gas: props.relWeb3.utils.toHex(3000000),
+      },
+      (err: any, result: any) => {
         if (!err) {
           return result;
         } else {
