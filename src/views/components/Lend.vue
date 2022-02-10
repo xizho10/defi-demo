@@ -61,7 +61,7 @@
         </div>
       </template>
       <template v-if="column.keys === 'claim'">
-        <Button type="primary" size="large" @click="() => claim()">
+        <Button type="primary" size="large" @click="() => claim(record)">
           claim
         </Button>
       </template>
@@ -1107,17 +1107,17 @@ const borrowModalHandleCancel = () => {
 };
 
 //claim
-const claim = async () => {
+const claim = async (item: any) => {
   let lendingPoolContract = new props.relWeb3.eth.Contract(
     LendingPoolAbi as any,
     lendpoolContract
   );
   let gasPrice = await props.relWeb3.eth.getGasPrice(); //获取当前gas价格
-  await lendingPoolContract.methods.claim(lendpoolContract).send(
+  await lendingPoolContract.methods.claim(item.contract).send(
     {
       from: props.address,
       gasPrice: gasPrice,
-      gas: props.relWeb3.utils.toHex(900000),
+      gas: props.relWeb3.utils.toHex(9000000),
     },
     (err: any, result: any) => {
       if (!err) {
