@@ -554,7 +554,6 @@ const refresh = async () => {
     });
   totalCollateralBalanceBase.value = userAccount.totalCollateralBalanceBase;
   totalBorrowBalanceBase.value = userAccount.totalBorrowBalanceBase;
-  console.log("userAccount", userAccount);
   //获取表格数据
   let length = 0;
   let lengthRes = await getContracts();
@@ -829,6 +828,7 @@ const refresh = async () => {
           return "--";
         }
       });
+    console.log("resGetPoolBalance.poolConfig", resGetPoolBalance.poolConfig);
     let poolConfigContract = new props.relWeb3.eth.Contract(
       PoolConfigurationAbi as any,
       resGetPoolBalance.poolConfig

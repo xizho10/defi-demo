@@ -146,9 +146,6 @@ const props = defineProps<{
 // const {
 //   Config,
 //   manageContract,
-//   shareContract,
-//   pscContract,
-//   usdaContract,
 //   infoContract,
 //   farmPoolContract,
 //   bnbContract,
@@ -193,18 +190,6 @@ const contractColumns = [
 //   {
 //     title: "manageContract",
 //     contract: manageContract,
-//   },
-//   {
-//     title: "shareContract",
-//     contract: shareContract,
-//   },
-//   {
-//     title: "pscContract",
-//     contract: pscContract,
-//   },
-//   {
-//     title: "usdaContract",
-//     contract: usdaContract,
 //   },
 //   {
 //     title: "infoContract",

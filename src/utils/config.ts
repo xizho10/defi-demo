@@ -2,9 +2,6 @@ const Config = "0x23FCC55a51a0Bf4D0CA21FA1FF2C29CD710D17E7";
 const BUSDDAILpContract = "0x127cc9F695A3bF4a4FFa9A39d72a5b8F504ECaef";
 const USDTDAILpContract = "0xcF10DCa65c0Fe989b5Fc859e7E148d4CF4569262";
 const manageContract = "0x7e53F7fCD0099AE9A0010FF2a7F7a211E8eAeA91";
-const shareContract = "0x433b1e6cc81531142d5DB368c4788A189A7E6727";
-const pscContract = "0xc8576FB94ad58E199dE8deB5A24e5741DaE0E9a4";
-const usdaContract = "0x4Ed7e2B0c37D30F7B0ed70353e023695642252eC";
 const infoContract = "0x55E40Bff1fAEF65D6a6bC88F2d622C07FFd76ADA";
 const farmPoolContract = "0x30E603b4Dd44Cffeb4E7069398b6A388a60a4B7C";
 
@@ -27,9 +24,6 @@ export {
   BUSDDAILpContract,
   USDTDAILpContract,
   manageContract,
-  shareContract,
-  pscContract,
-  usdaContract,
   infoContract,
   farmPoolContract,
   bnbContract,
