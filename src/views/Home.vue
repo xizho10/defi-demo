@@ -278,6 +278,10 @@ const columns = [
     dataIndex: "lpTokenName",
   },
   {
+    title: "FARMAPR",
+    dataIndex: "FARMAPR",
+  },
+  {
     title: "APR",
     dataIndex: "APR",
   },
@@ -541,6 +545,7 @@ const getBalanceOf = async (relWeb3: Web3, address: string) => {
       maraPerAlp: "",
       userRewardDebts: "",
       farmToken: "",
+      totalInUSD: "",
       APR: "",
     });
   });
@@ -578,6 +583,16 @@ const getBalanceOf = async (relWeb3: Web3, address: string) => {
   }
   allTotalInUSD.value = defaultTotalInUSD;
   for (let item of data.value) {
+    let totalInUSD = await InfoContract.methods
+      .getDepositAmountInUSD(item.index)
+      .call((err: any, result: any) => {
+        if (!err) {
+          return result;
+        } else {
+          return "--";
+        }
+      });
+    item.totalInUSD = totalInUSD;
     let resDepositBalance = await InfoContract.methods
       .getStakedTokens(item.index, address)
       .call((err: any, result: any) => {
@@ -963,17 +978,30 @@ const getBalanceOf = async (relWeb3: Web3, address: string) => {
               }
             });
     item.rewardPrice = rewardPrice;
-    item.APR =
-      new BigNumber(maraPerBlock.value)
-        .multipliedBy(20 * 60 * 24 * 365)
-        .multipliedBy(
-          new BigNumber(maraPrice).plus(
-            new BigNumber(rewardPrice).multipliedBy(rewardMultiplier)
-          )
-        )
-        .dividedBy(new BigNumber(allTotalInUSD.value))
-        .dividedBy(Math.pow(10, 16))
-        .toFixed(4) + "%";
+    // item.APR =
+    //   new BigNumber(maraPerBlock.value)
+    //     .multipliedBy(20 * 60 * 24 * 365)
+    //     .multipliedBy(
+    //       new BigNumber(maraPrice).plus(
+    //         new BigNumber(rewardPrice).multipliedBy(item.rewardMultiplier)
+    //       )
+    //     )
+    //     .dividedBy(new BigNumber(allTotalInUSD.value))
+    //     .dividedBy(Math.pow(10, 16))
+    //     .toFixed(4) + "%";
+    item.APR = new BigNumber(maraPerBlock.value)
+      .multipliedBy(20 * 60 * 24 * 365)
+      .multipliedBy(new BigNumber(item.totalInUSD))
+      .dividedBy(new BigNumber(allTotalInUSD.value))
+      .dividedBy(Math.pow(10, 18))
+      .toFixed(4);
+    item.FARMAPR = new BigNumber(maraPerBlock.value)
+      .multipliedBy(20 * 60 * 24 * 365)
+      .multipliedBy(new BigNumber(item.totalInUSD))
+      .multipliedBy(new BigNumber(item.rewardMultiplier))
+      .dividedBy(new BigNumber(allTotalInUSD.value))
+      .dividedBy(Math.pow(10, 18))
+      .toFixed(4);
   }
 };
 
