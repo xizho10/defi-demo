@@ -278,6 +278,10 @@ const columns = [
     dataIndex: "lpTokenName",
   },
   {
+    title: "APR",
+    dataIndex: "APR",
+  },
+  {
     title: "Farm Token",
     keys: "farmToken",
     dataIndex: "farmToken",
@@ -330,6 +334,7 @@ const borrowDepositVisible = ref<boolean>(false);
 const relWeb3 = ref<any>("");
 const showCoinBtn = ref<boolean>(false);
 const maraPerBlock = ref<string | number>("");
+const allTotalInUSD = ref<string | number>(0);
 const amount = ref<string | number>("");
 const withdrawAmount = ref<string | number>("");
 const borrowToken = ref<string | number>("");
@@ -536,6 +541,7 @@ const getBalanceOf = async (relWeb3: Web3, address: string) => {
       maraPerAlp: "",
       userRewardDebts: "",
       farmToken: "",
+      APR: "",
     });
   });
   data.value = _.cloneDeep(deepData);
@@ -554,6 +560,23 @@ const getBalanceOf = async (relWeb3: Web3, address: string) => {
       }
     });
   maraPerBlock.value = MaraPerBlock;
+  let defaultTotalInUSD = "0";
+  for (let item of data.value) {
+    // //获取tootalInUSD
+    let totalInUSD = await InfoContract.methods
+      .getDepositAmountInUSD(item.index)
+      .call((err: any, result: any) => {
+        if (!err) {
+          return result;
+        } else {
+          return "--";
+        }
+      });
+    defaultTotalInUSD = new BigNumber(defaultTotalInUSD)
+      .plus(totalInUSD)
+      .toFixed();
+  }
+  allTotalInUSD.value = defaultTotalInUSD;
   for (let item of data.value) {
     let resDepositBalance = await InfoContract.methods
       .getStakedTokens(item.index, address)
@@ -803,30 +826,32 @@ const getBalanceOf = async (relWeb3: Web3, address: string) => {
     } else {
       item.farmToken = item.lpTokenName;
     }
-    let alpErc20Contract = new relWeb3.eth.Contract(
-      Erc20Abi as any,
-      poolInfos.aLPToken
-    );
-    let userRewardTokenBalance = await alpErc20Contract.methods
-      .balanceOf(address)
-      .call((err: any, result: any) => {
-        if (!err) {
-          return result;
-        } else {
-          return "--";
-        }
-      });
-    item.userRewardTokenBalance = userRewardTokenBalance;
-    let aLpContractRewardTokenBalance = await alpErc20Contract.methods
-      .balanceOf(poolInfos.aLPToken)
-      .call((err: any, result: any) => {
-        if (!err) {
-          return result;
-        } else {
-          return "--";
-        }
-      });
-    item.aLpContractRewardTokenBalance = aLpContractRewardTokenBalance;
+    if (rewardToken !== "0x0000000000000000000000000000000000000000") {
+      let alpErc20Contract = new relWeb3.eth.Contract(
+        Erc20Abi as any,
+        rewardToken
+      );
+      let userRewardTokenBalance = await alpErc20Contract.methods
+        .balanceOf(address)
+        .call((err: any, result: any) => {
+          if (!err) {
+            return result;
+          } else {
+            return "--";
+          }
+        });
+      item.userRewardTokenBalance = userRewardTokenBalance;
+      let aLpContractRewardTokenBalance = await alpErc20Contract.methods
+        .balanceOf(poolInfos.aLPToken)
+        .call((err: any, result: any) => {
+          if (!err) {
+            return result;
+          } else {
+            return "--";
+          }
+        });
+      item.aLpContractRewardTokenBalance = aLpContractRewardTokenBalance;
+    }
     let rewardMultiplier = await aLpContract.methods
       .rewardMultiplier()
       .call((err: any, result: any) => {
@@ -896,6 +921,45 @@ const getBalanceOf = async (relWeb3: Web3, address: string) => {
     //         .toFixed(4) + "%";
     item.share = new BigNumber(resShareBalance).toFixed();
     item.totalSupply = shareTotal;
+    //获取mara price
+    let MockPriceOracleContract = new relWeb3.eth.Contract(
+      MockPriceOracleAbi as any,
+      oracleContract.value
+    );
+    let maraPrice = await MockPriceOracleContract.methods
+      .getAssetPrice(item.MaraAddress)
+      .call((err: any, result: any) => {
+        if (!err) {
+          return result;
+        } else {
+          return "--";
+        }
+      });
+    item.maraAssetPrice = maraPrice;
+    let rewardPrice =
+      item.rewardToken === "0x0000000000000000000000000000000000000000"
+        ? 0
+        : await MockPriceOracleContract.methods
+            .getAssetPrice(item.rewardToken)
+            .call((err: any, result: any) => {
+              if (!err) {
+                return result;
+              } else {
+                return "--";
+              }
+            });
+    item.rewardPrice = rewardPrice;
+    item.APR =
+      new BigNumber(maraPerBlock.value)
+        .multipliedBy(20 * 60 * 24 * 365)
+        .multipliedBy(
+          new BigNumber(maraPrice).plus(
+            new BigNumber(rewardPrice).multipliedBy(rewardMultiplier)
+          )
+        )
+        .dividedBy(new BigNumber(allTotalInUSD.value))
+        .dividedBy(100)
+        .toFixed(4) + "%";
   }
 };
 
