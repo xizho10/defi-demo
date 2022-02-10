@@ -483,7 +483,7 @@ const setPoolStatus = async () => {
   await lendPoolContract.methods
     .setPoolStatus(
       setPoolStatusToken.value,
-      setPoolStatusStatus.value,
+      setPoolStatusStatus.value === "false" ? false : true,
       setPoolStatusBoolean.value
     )
     .send(
