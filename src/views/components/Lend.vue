@@ -17,6 +17,9 @@
   >
   <Table :columns="columns" :data-source="data" :scroll="{ x: 1440 }">
     <template #bodyCell="{ column, record }">
+      <template v-if="column.keys === 'active'">
+        {{ record?.getPoolBalance?.status === "1" ? "true" : "false" }}
+      </template>
       <template v-if="column.keys === 'userUsePoolAsCollateral'">
         <div>
           <Switch
@@ -436,6 +439,11 @@ const columns = [
     dataIndex: "assets",
   },
   {
+    title: "Active",
+    keys: "active",
+    dataIndex: "active",
+  },
+  {
     title: "AbleBorrow",
     dataIndex: "ableBorrow",
   },
@@ -572,6 +580,7 @@ const refresh = async () => {
     deepData.push({
       index: index,
       key: item,
+      active: "",
       ableBorrow: "",
       assets: "",
       liquidityBalance: 0,

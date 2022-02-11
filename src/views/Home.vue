@@ -15,6 +15,13 @@
             <div>maraPerBlock: {{ maraPerBlock }}</div>
             <Table :columns="columns" :data-source="data">
               <template #bodyCell="{ column, record }">
+                <template v-if="column.keys === 'lpAmountTotal'">
+                  {{
+                    new BigNumber(record?.lpAmountTotal).dividedBy(
+                      Math.pow(10, 18).toFixed(4)
+                    )
+                  }}
+                </template>
                 <template v-if="column.keys === 'claim'">
                   <Button
                     type="primary"
@@ -42,7 +49,13 @@
                     Withdraw
                   </Button>
                 </template>
-                <template v-if="column.keys === 'earn'">
+                <template
+                  v-if="
+                    column.keys === 'earn' &&
+                    record?.rewardToken ===
+                      '0x0000000000000000000000000000000000000000'
+                  "
+                >
                   <Button
                     type="primary"
                     size="large"
@@ -95,7 +108,12 @@
                   lastEarnBlock: {{ record?.lastEarnBlock }}
                 </p>
                 <p style="margin: 0">
-                  lpAmountTotal: {{ record?.lpAmountTotal }}
+                  lpAmountTotal:
+                  {{
+                    new BigNumber(record?.lpAmountTotal).dividedBy(
+                      Math.pow(10, 18).toFixed(4)
+                    )
+                  }}
                 </p>
                 <div class="spaceSty" />
                 <p style="margin: 0">MaraAddress: {{ record?.MaraAddress }}</p>
@@ -278,12 +296,12 @@ const columns = [
     dataIndex: "lpTokenName",
   },
   {
-    title: "FARMAPR",
-    dataIndex: "FARMAPR",
-  },
-  {
     title: "APR",
     dataIndex: "APR",
+  },
+  {
+    title: "Farm APR",
+    dataIndex: "FARMAPR",
   },
   {
     title: "Farm Token",
@@ -292,6 +310,11 @@ const columns = [
   },
   {
     title: "Liquidity",
+    keys: "lpAmountTotal",
+    dataIndex: "lpAmountTotal",
+  },
+  {
+    title: "My Liquidity",
     dataIndex: "depositBalance",
   },
   {
@@ -990,13 +1013,13 @@ const getBalanceOf = async (relWeb3: Web3, address: string) => {
     //     .dividedBy(Math.pow(10, 16))
     //     .toFixed(4) + "%";
     item.APR = new BigNumber(maraPerBlock.value)
-      .multipliedBy(20 * 60 * 24 * 365)
+      // .multipliedBy(20 * 60 * 24 * 365)
       .multipliedBy(new BigNumber(item.totalInUSD))
       .dividedBy(new BigNumber(allTotalInUSD.value))
       .dividedBy(Math.pow(10, 18))
       .toFixed(4);
     item.FARMAPR = new BigNumber(maraPerBlock.value)
-      .multipliedBy(20 * 60 * 24 * 365)
+      // .multipliedBy(20 * 60 * 24 * 365)
       .multipliedBy(new BigNumber(item.totalInUSD))
       .multipliedBy(new BigNumber(item.rewardMultiplier))
       .dividedBy(new BigNumber(allTotalInUSD.value))

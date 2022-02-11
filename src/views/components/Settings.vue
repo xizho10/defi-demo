@@ -397,11 +397,11 @@ const addPool = async () => {
 
 const setMaraPerBlock = async () => {
   let gasPrice = await props.relWeb3.eth.getGasPrice(); //获取当前gas价格
-  let ManageContract = new props.relWeb3.eth.Contract(
-    ManageAbi as any,
-    manageContract
+  let InfoContract = new props.relWeb3.eth.Contract(
+    InfoAbi as any,
+    infoContract
   );
-  await ManageContract.methods.setMaraPerBlock(maraPerBlock.value).send(
+  await InfoContract.methods.setMaraPerBlock(maraPerBlock.value).send(
     {
       from: props.address,
       gasPrice: gasPrice,
