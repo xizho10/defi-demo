@@ -82,7 +82,7 @@
   </Modal>
   <Modal
     :visible="MaraVisible"
-    title="Mara"
+    title="Mint"
     :footer="null"
     :bodyStyle="{ margin: 'center', textAlign: 'center' }"
     @ok="MaraHandleOk"
