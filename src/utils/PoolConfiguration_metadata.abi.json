@@ -1,42 +1,6 @@
 [
   {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "_baseBorrowRate",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "_rateSlope1",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "_rateSlope2",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "_collateralPercent",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "_liquidationBonusPercent",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "_optimalUtilizationRate",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "_excessUtilizationRate",
-        "type": "uint256"
-      }
-    ],
+    "inputs": [],
     "stateMutability": "nonpayable",
     "type": "constructor"
   },
@@ -163,6 +127,19 @@
   },
   {
     "inputs": [],
+    "name": "getMaxBorrowInUSD",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
     "name": "getOptimalUtilizationRate",
     "outputs": [
       {
@@ -201,6 +178,19 @@
   {
     "inputs": [],
     "name": "liquidationBonusPercent",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "maxBorrowInUSD",
     "outputs": [
       {
         "internalType": "uint256",
@@ -266,6 +256,75 @@
   {
     "inputs": [],
     "name": "renounceOwnership",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "_collateralPercent",
+        "type": "uint256"
+      }
+    ],
+    "name": "setCollateralPercent",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "_baseBorrowRate",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "_rateSlope1",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "_rateSlope2",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "_collateralPercent",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "_liquidationBonusPercent",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "_optimalUtilizationRate",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "_excessUtilizationRate",
+        "type": "uint256"
+      }
+    ],
+    "name": "setConfig",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "_maxBorrowInUSD",
+        "type": "uint256"
+      }
+    ],
+    "name": "setMaxBorrowInUSD",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"

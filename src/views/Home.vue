@@ -146,6 +146,34 @@
                 <p style="margin: 0">
                   userRewardDebts: {{ record?.userRewardDebts }}
                 </p>
+                <div class="spaceSty" />
+                <div>
+                  poolInfos:
+                  <p style="margin: 0">
+                    aLPToken:
+                    {{ record?.poolInfos?.aLPToken }}
+                  </p>
+                  <p style="margin: 0">
+                    farmAddress:
+                    {{ record?.poolInfos?.farmAddress }}
+                  </p>
+                  <p style="margin: 0">
+                    lastRewardBlock:
+                    {{ record?.poolInfos?.lastRewardBlock }}
+                  </p>
+                  <p style="margin: 0">
+                    lendingPoolAddress:
+                    {{ record?.poolInfos?.lendingPoolAddress }}
+                  </p>
+                  <p style="margin: 0">
+                    lpToken:
+                    {{ record?.poolInfos?.lpToken }}
+                  </p>
+                  <p style="margin: 0">
+                    status:
+                    {{ record?.poolInfos?.status }}
+                  </p>
+                </div>
               </template>
             </Table>
           </TabPane>
@@ -544,6 +572,7 @@ const getBalanceOf = async (relWeb3: Web3, address: string) => {
       share: "0%",
       depositBalance: "0",
       poolInfos: {},
+      poolInfosValue: {},
       borrowToken: "",
       entranceFeeFactor: "",
       withdrawFeeFactor: "",
@@ -652,6 +681,18 @@ const getBalanceOf = async (relWeb3: Web3, address: string) => {
       });
     item.poolInfos = poolInfos;
     item.borrowToken = poolInfos.lpToken;
+    //获取 poolInfos
+    let poolInfosValue = await InfoContract.methods
+      .poolInfos(item.index)
+      .call((err: any, result: any) => {
+        if (!err) {
+          return result;
+        } else {
+          return "--";
+        }
+      });
+    item.poolInfosValue = poolInfosValue;
+    console.log("poolInfosValue", poolInfosValue);
     //获取币种name
     let itemContract = new relWeb3.eth.Contract(
       Erc20Abi as any,

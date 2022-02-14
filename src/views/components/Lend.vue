@@ -12,6 +12,27 @@
       <div>--</div>
     </div>
   </div>
+  <div>
+    totalLiquidityBalanceBase:{{
+      new BigNumber(totalLiquidityBalanceBase)
+        .dividedBy(Math.pow(10, 18))
+        .toFixed(4)
+    }}
+  </div>
+  <div>
+    totalCollateralBalanceBase:{{
+      new BigNumber(totalCollateralBalanceBase)
+        .dividedBy(Math.pow(10, 18))
+        .toFixed(4)
+    }}
+  </div>
+  <div>
+    totalBorrowBalanceBase:{{
+      new BigNumber(totalBorrowBalanceBase)
+        .dividedBy(Math.pow(10, 18))
+        .toFixed(4)
+    }}
+  </div>
   <Button type="primary" size="large" @click="refresh" class="refresh"
     >Refresh</Button
   >
@@ -107,8 +128,25 @@
     </template>
     <template #expandedRowRender="{ record }">
       <p style="margin: 0">contractAddress: {{ record?.contract }}</p>
-      <p style="margin: 0">maToken: {{ record?.getPoolBalance?.maToken }}</p>
+      <div class="spaceSty" />
+      <h3>Ma Token:</h3>
       <p style="margin: 0">rewardToken: {{ record?.rewardToken }}</p>
+      <p style="margin: 0">lastRewardBlock: {{ record?.lastRewardBlock }}</p>
+      <p style="margin: 0">startBlock: {{ record?.startBlock }}</p>
+      <p style="margin: 0">
+        tokensPerBlock:
+        {{
+          new BigNumber(record?.tokensPerBlock)
+            .dividedBy(Math.pow(10, 18))
+            .toFixed()
+        }}
+      </p>
+      <p style="margin: 0">rewardMultiplier: {{ record?.rewardMultiplier }}</p>
+      <p style="margin: 0">
+        rewardMultiplierMax: {{ record?.rewardMultiplierMax }}
+      </p>
+      <div class="spaceSty" />
+      <h3>Balance:</h3>
       <p style="margin: 0">
         userRewardTokenBalance:
         {{
@@ -125,7 +163,6 @@
             .toFixed()
         }}
       </p>
-      <div class="spaceSty" />
       <p style="margin: 0">
         lendpoolInfoMaraBalance:
         {{
@@ -159,29 +196,27 @@
         }}
       </p>
       <div class="spaceSty" />
-      <p style="margin: 0">
-        multiplier:
-        {{ record?.getPoolBalance?.multiplier }}
-      </p>
-      <p style="margin: 0">
-        lastUpdateTimestamp:
-        {{ record?.getPoolBalance?.lastUpdateTimestamp }}
-      </p>
-      <p style="margin: 0">
-        poolConfig: {{ record?.getPoolBalance?.poolConfig }}
-      </p>
-      <p style="margin: 0">
-        poolReserves:
-        {{ record?.getPoolBalance?.poolReserves }}
-      </p>
+      <h3>Pool:</h3>
       <p style="margin: 0">
         status:
         {{ record?.getPoolBalance?.status }}
       </p>
       <p style="margin: 0">
-        totalMaraReward:
+        ableBorrow:
+        {{ record?.getPoolBalance?.ableBorrow }}
+      </p>
+      <p style="margin: 0">
+        maToken:
+        {{ record?.getPoolBalance?.maToken }}
+      </p>
+      <p style="margin: 0">
+        poolConfig:
+        {{ record?.getPoolBalance?.poolConfig }}
+      </p>
+      <p style="margin: 0">
+        totalBorrows:
         {{
-          new BigNumber(record?.getPoolBalance?.totalMaraReward)
+          new BigNumber(record?.getPoolBalance?.totalBorrows)
             .dividedBy(Math.pow(10, 18))
             .toFixed(4)
         }}
@@ -195,47 +230,133 @@
         }}
       </p>
       <p style="margin: 0">
-        totalBorrows:
+        poolReserves:
+        {{ record?.getPoolBalance?.poolReserves }}
+      </p>
+      <p style="margin: 0">
+        lastUpdateTimestamp:
+        {{ record?.getPoolBalance?.lastUpdateTimestamp }}
+      </p>
+      <p style="margin: 0">
+        totalMaraReward:
         {{
-          new BigNumber(record?.getPoolBalance?.totalBorrows)
+          new BigNumber(record?.getPoolBalance?.totalMaraReward)
+            .dividedBy(Math.pow(10, 18))
+            .toFixed(4)
+        }}
+      </p>
+      <p style="margin: 0">
+        totalTokenReward:
+        {{
+          new BigNumber(record?.getPoolBalance?.totalTokenReward)
+            .dividedBy(Math.pow(10, 18))
+            .toFixed(4)
+        }}
+      </p>
+      <p style="margin: 0">
+        multiplier:
+        {{
+          new BigNumber(record?.getPoolBalance?.multiplier)
+            .dividedBy(Math.pow(10, 18))
+            .toFixed(4)
+        }}
+      </p>
+      <p style="margin: 0">
+        multiplierToken:
+        {{
+          new BigNumber(record?.getPoolBalance?.multiplierToken)
             .dividedBy(Math.pow(10, 18))
             .toFixed(4)
         }}
       </p>
       <div class="spaceSty" />
+      <h3>getPools:</h3>
       <p style="margin: 0">
-        liquidityBalance:
+        status:
+        {{ record?.getPoolValues?.status }}
+      </p>
+      <p style="margin: 0">
+        ableBorrow:
+        {{ record?.getPoolValues?.ableBorrow }}
+      </p>
+      <p style="margin: 0">
+        maTokenAddress:
+        {{ record?.getPoolValues?.maTokenAddress }}
+      </p>
+      <p style="margin: 0">
+        poolConfigAddress:
+        {{ record?.getPoolValues?.poolConfigAddress }}
+      </p>
+      <p style="margin: 0">
+        totalBorrows:
+        {{
+          new BigNumber(record?.getPoolValues?.totalBorrows)
+            .dividedBy(Math.pow(10, 18))
+            .toFixed(4)
+        }}
+      </p>
+      <p style="margin: 0">
+        totalBorrowShares:
+        {{
+          new BigNumber(record?.getPoolValues?.totalBorrowShares)
+            .dividedBy(Math.pow(10, 18))
+            .toFixed(4)
+        }}
+      </p>
+      <p style="margin: 0">
+        totalLiquidity:
+        {{
+          new BigNumber(record?.getPoolValues?.totalLiquidity)
+            .dividedBy(Math.pow(10, 18))
+            .toFixed(4)
+        }}
+      </p>
+      <p style="margin: 0">
+        totalAvailableLiquidity:
+        {{
+          new BigNumber(record?.getPoolValues?.totalAvailableLiquidity)
+            .dividedBy(Math.pow(10, 18))
+            .toFixed(4)
+        }}
+      </p>
+      <p style="margin: 0">
+        lastUpdateTimestamp:
+        {{ record?.getPoolValues.lastUpdateTimestamp }}
+      </p>
+      <div class="spaceSty" />
+      <h3>getUserPoolData:</h3>
+      <p style="margin: 0">
+        compoundedLiquidityBalance:
         {{ record?.liquidityBalance }}
       </p>
       <p style="margin: 0">
-        borrowBalance:
+        compoundedBorrowBalance:
         {{ record?.borrowBalance }}
       </p>
       <p style="margin: 0">
         userUsePoolAsCollateral:
         {{ record?.userUsePoolAsCollateral }}
       </p>
-      <p style="margin: 0">
-        borrowShares:
-        {{ record?.borrowShares }}
-      </p>
+      <div class="spaceSty" />
+      <h3>userPoolData:</h3>
       <p style="margin: 0">
         disableUseAsCollateral:
         {{ record?.disableUseAsCollateral }}
       </p>
       <p style="margin: 0">
+        borrowShares:
+        {{ record?.borrowShares }}
+      </p>
+      <p style="margin: 0">
         latestMultiplier:
         {{ record?.latestMultiplier }}
       </p>
-      <div class="spaceSty" />
       <p style="margin: 0">
-        optimalUtilizationRate:
-        {{
-          new BigNumber(record?.optimalUtilizationRate)
-            .dividedBy(Math.pow(10, 18))
-            .toFixed(4)
-        }}
+        latestTokenMultiplier:
+        {{ record?.latestTokenMultiplier }}
       </p>
+      <div class="spaceSty" />
+      <h3>Pool Config:</h3>
       <p style="margin: 0">
         baseBorrowRate:
         {{
@@ -272,6 +393,30 @@
         liquidationBonusPercent:
         {{
           new BigNumber(record?.liquidationBonusPercent)
+            .dividedBy(Math.pow(10, 18))
+            .toFixed(4)
+        }}
+      </p>
+      <p style="margin: 0">
+        optimalUtilizationRate:
+        {{
+          new BigNumber(record?.optimalUtilizationRate)
+            .dividedBy(Math.pow(10, 18))
+            .toFixed(4)
+        }}
+      </p>
+      <p style="margin: 0">
+        excessUtilizationRate:
+        {{
+          new BigNumber(record?.excessUtilizationRate)
+            .dividedBy(Math.pow(10, 18))
+            .toFixed(4)
+        }}
+      </p>
+      <p style="margin: 0">
+        maxBorrowInUSD:
+        {{
+          new BigNumber(record?.maxBorrowInUSD)
             .dividedBy(Math.pow(10, 18))
             .toFixed(4)
         }}
@@ -523,6 +668,7 @@ const depositVisible = ref<boolean>(false);
 const modalTitle = ref<string | number>("deposit");
 const borrowVisible = ref<boolean>(false);
 const borrowModalTitle = ref<string | number>("borrow");
+const totalLiquidityBalanceBase = ref<string | number>("0");
 const totalCollateralBalanceBase = ref<string | number>("0");
 const totalBorrowBalanceBase = ref<string | number>("0");
 const chooseItem = ref<any>({});
@@ -583,6 +729,8 @@ const refresh = async () => {
       borrowBalance: "0",
       walletBalance: "0",
       optimalUtilizationRate: "0",
+      excessUtilizationRate: "",
+      maxBorrowInUSD: "",
       totalLiquidity: "0",
       totalAvailableLiquidity: "0",
       totalBorrowInUSD: "",
@@ -596,7 +744,13 @@ const refresh = async () => {
       disableUseAsCollateral: "",
       latestMultiplier: "",
       rewardToken: "",
+      lastRewardBlock: "",
+      startBlock: "",
+      tokensPerBlock: "",
+      rewardMultiplier: "",
+      rewardMultiplierMax: "",
       rewardTokenBalance: "",
+      getPoolValues: {},
     });
   });
   let Contract = new props.relWeb3.eth.Contract(
@@ -689,7 +843,7 @@ const refresh = async () => {
       });
     item.assets = name;
     item.key = name;
-    let res = await Contract.methods
+    let getUserPoolDataValue = await Contract.methods
       .getUserPoolData(props.address, item.contract)
       .call((err: any, result: any) => {
         if (!err) {
@@ -698,13 +852,17 @@ const refresh = async () => {
           return "--";
         }
       });
-    item.liquidityBalance = new BigNumber(res.compoundedLiquidityBalance)
+    item.liquidityBalance = new BigNumber(
+      getUserPoolDataValue.compoundedLiquidityBalance
+    )
       .dividedBy(Math.pow(10, 18))
       .toFixed(4);
-    item.borrowBalance = new BigNumber(res.compoundedBorrowBalance)
+    item.borrowBalance = new BigNumber(
+      getUserPoolDataValue.compoundedBorrowBalance
+    )
       .dividedBy(Math.pow(10, 18))
       .toFixed(4);
-    item.userUsePoolAsCollateral = res.userUsePoolAsCollateral;
+    item.userUsePoolAsCollateral = getUserPoolDataValue.userUsePoolAsCollateral;
     let userpooldata = await Contract.methods
       .userPoolData(props.address, item.contract)
       .call((err: any, result: any) => {
@@ -717,6 +875,7 @@ const refresh = async () => {
     item.borrowShares = userpooldata.borrowShares;
     item.disableUseAsCollateral = userpooldata.disableUseAsCollateral;
     item.latestMultiplier = userpooldata.latestMultiplier;
+    item.latestTokenMultiplier = userpooldata.latestTokenMultiplier;
     let totalLiquidity = await Contract.methods
       .getTotalLiquidity(item.contract)
       .call((err: any, result: any) => {
@@ -752,11 +911,20 @@ const refresh = async () => {
       });
     item.getPoolBalance = resGetPoolBalance;
     item.ableBorrow = resGetPoolBalance.ableBorrow.toString();
+    let getPoolValues = await Contract.methods
+      .getPool(item.contract)
+      .call((err: any, result: any) => {
+        if (!err) {
+          return result;
+        } else {
+          return "--";
+        }
+      });
+    item.getPoolValues = getPoolValues;
     let MaraContract = new props.relWeb3.eth.Contract(
       Erc20Abi as any,
       maraContract
     );
-
     //获取lendingInfoPool mara余额
     let lendpoolInfoMaraBalance = await MaraContract.methods
       .balanceOf(lendpoolinfoContract)
@@ -980,6 +1148,28 @@ const refresh = async () => {
         }
       });
     item.liquidationBonusPercent = liquidationBonusPercent;
+    //获取excessUtilizationRate
+    let excessUtilizationRate = await poolConfigContract.methods
+      .excessUtilizationRate()
+      .call((err: any, result: any) => {
+        if (!err) {
+          return result;
+        } else {
+          return "--";
+        }
+      });
+    item.excessUtilizationRate = excessUtilizationRate;
+    //获取MaxBorrowInUSD
+    let maxBorrowInUSD = await poolConfigContract.methods
+      .maxBorrowInUSD()
+      .call((err: any, result: any) => {
+        if (!err) {
+          return result;
+        } else {
+          return "--";
+        }
+      });
+    item.maxBorrowInUSD = maxBorrowInUSD;
     //获取borrowReward
     let calculateReward = await Contract.methods
       .calculateReward(item.contract, props.address)
@@ -1040,6 +1230,56 @@ const refresh = async () => {
         }
       });
     item.rewardToken = rewardToken;
+    let lastRewardBlock = await matokenContract.methods
+      .lastRewardBlock()
+      .call((err: any, result: any) => {
+        if (!err) {
+          return result;
+        } else {
+          return "--";
+        }
+      });
+    item.lastRewardBlock = lastRewardBlock;
+    let startBlock = await matokenContract.methods
+      .startBlock()
+      .call((err: any, result: any) => {
+        if (!err) {
+          return result;
+        } else {
+          return "--";
+        }
+      });
+    item.startBlock = startBlock;
+    let tokensPerBlock = await matokenContract.methods
+      .tokensPerBlock()
+      .call((err: any, result: any) => {
+        if (!err) {
+          return result;
+        } else {
+          return "--";
+        }
+      });
+    item.tokensPerBlock = tokensPerBlock;
+    let rewardMultiplier = await matokenContract.methods
+      .rewardMultiplier()
+      .call((err: any, result: any) => {
+        if (!err) {
+          return result;
+        } else {
+          return "--";
+        }
+      });
+    item.rewardMultiplier = rewardMultiplier;
+    let rewardMultiplierMax = await matokenContract.methods
+      .rewardMultiplierMax()
+      .call((err: any, result: any) => {
+        if (!err) {
+          return result;
+        } else {
+          return "--";
+        }
+      });
+    item.rewardMultiplierMax = rewardMultiplierMax;
     if (rewardToken !== "0x0000000000000000000000000000000000000000") {
       let balanceContract = new props.relWeb3.eth.Contract(
         Erc20Abi as any,

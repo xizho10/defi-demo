@@ -73,19 +73,6 @@
   },
   {
     "inputs": [],
-    "name": "TOKEN_PER_BLOCK",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
     "name": "distributeMara",
     "outputs": [],
     "stateMutability": "nonpayable",
@@ -104,7 +91,7 @@
         "type": "uint256"
       }
     ],
-    "name": "getReleaseAmount",
+    "name": "getMaraReleaseAmount",
     "outputs": [
       {
         "internalType": "uint256",
