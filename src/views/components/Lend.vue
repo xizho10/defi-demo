@@ -12,6 +12,7 @@
       <div>--</div>
     </div>
   </div>
+  <h3>getUserAccount:</h3>
   <div>
     totalLiquidityBalanceBase:{{
       new BigNumber(totalLiquidityBalanceBase)
@@ -33,6 +34,14 @@
         .toFixed(4)
     }}
   </div>
+  <h3>LendingPoolInfo:</h3>
+  <p style="margin: 0">mara: {{ mara }}</p>
+  <p style="margin: 0">lastRewardBlock: {{ lastRewardBlock }}</p>
+  <p style="margin: 0">startBlock: {{ startBlock }}</p>
+  <p style="margin: 0">
+    tokensPerBlock:
+    {{ new BigNumber(tokensPerBlock).dividedBy(Math.pow(10, 18)).toFixed() }}
+  </p>
   <Space :size="10">
     <Button type="primary" size="large" @click="refresh" class="refresh"
       >Refresh</Button
@@ -193,7 +202,7 @@
         }}
       </p>
       <p style="margin: 0">
-        userMaraBalance:
+        maraBalance:
         {{
           new BigNumber(record?.maraBalance)
             .dividedBy(Math.pow(10, 18))
@@ -668,6 +677,10 @@ const borrowModalTitle = ref<string | number>("borrow");
 const totalLiquidityBalanceBase = ref<string | number>("0");
 const totalCollateralBalanceBase = ref<string | number>("0");
 const totalBorrowBalanceBase = ref<string | number>("0");
+const mara = ref<string | number>("0");
+const lastRewardBlock = ref<string | number>("0");
+const startBlock = ref<string | number>("0");
+const tokensPerBlock = ref<string | number>("0");
 const chooseItem = ref<any>({});
 const withdrawVisible = ref<boolean>(false);
 const withdrawModalTitle = ref<string | number>("withdraw");
@@ -701,6 +714,46 @@ const refresh = async () => {
     });
   totalCollateralBalanceBase.value = userAccount.totalCollateralBalanceBase;
   totalBorrowBalanceBase.value = userAccount.totalBorrowBalanceBase;
+  let userMara = await LendingPoolInfoContract.methods
+    .mara()
+    .call((err: any, result: any) => {
+      if (!err) {
+        return result;
+      } else {
+        return "--";
+      }
+    });
+  mara.value = userMara;
+  let userLastRewardBlock = await LendingPoolInfoContract.methods
+    .lastRewardBlock()
+    .call((err: any, result: any) => {
+      if (!err) {
+        return result;
+      } else {
+        return "--";
+      }
+    });
+  lastRewardBlock.value = userLastRewardBlock;
+  let userStartBlock = await LendingPoolInfoContract.methods
+    .startBlock()
+    .call((err: any, result: any) => {
+      if (!err) {
+        return result;
+      } else {
+        return "--";
+      }
+    });
+  startBlock.value = userStartBlock;
+  let userTokensPerBlock = await LendingPoolInfoContract.methods
+    .tokensPerBlock()
+    .call((err: any, result: any) => {
+      if (!err) {
+        return result;
+      } else {
+        return "--";
+      }
+    });
+  tokensPerBlock.value = userTokensPerBlock;
   //获取表格数据
   let length = 0;
   let lengthRes = await getContracts();
@@ -1190,7 +1243,7 @@ const refresh = async () => {
       .dividedBy(Math.pow(10, 18))
       .toFixed()} + ${new BigNumber(calculateTokenReward)
       .dividedBy(Math.pow(10, 18))
-      .toFixed()}`;
+      .toFixed()} * 2`;
     //获取optimalUtilizationRate
     let optimalUtilizationRate = await poolConfigContract.methods
       .getOptimalUtilizationRate()
