@@ -1,47 +1,44 @@
 <template>
   <div class="currencyContainer">
-    <div class="currencyTop">
-      <div>Pool Overview</div>
-    </div>
     <div class="currencyBottom">
-      <div>Total Borrow</div>
-      <div>--</div>
+      <div>
+        <h3>getUserAccount:</h3>
+        <div>
+          totalLiquidityBalanceBase:{{
+            new BigNumber(totalLiquidityBalanceBase)
+              .dividedBy(Math.pow(10, 18))
+              .toFixed(4)
+          }}
+        </div>
+        <div>
+          totalCollateralBalanceBase:{{
+            new BigNumber(totalCollateralBalanceBase)
+              .dividedBy(Math.pow(10, 18))
+              .toFixed(4)
+          }}
+        </div>
+        <div>
+          totalBorrowBalanceBase:{{
+            new BigNumber(totalBorrowBalanceBase)
+              .dividedBy(Math.pow(10, 18))
+              .toFixed(4)
+          }}
+        </div>
+      </div>
+      <div>
+        <h3>LendingPoolInfo:</h3>
+        <p style="margin: 0">mara: {{ mara }}</p>
+        <p style="margin: 0">lastRewardBlock: {{ lastRewardBlock }}</p>
+        <p style="margin: 0">startBlock: {{ startBlock }}</p>
+        <p style="margin: 0">
+          tokensPerBlock:
+          {{
+            new BigNumber(tokensPerBlock).dividedBy(Math.pow(10, 18)).toFixed()
+          }}
+        </p>
+      </div>
     </div>
-    <div class="currencyBottom">
-      <div>Total Supply</div>
-      <div>--</div>
-    </div>
   </div>
-  <h3>getUserAccount:</h3>
-  <div>
-    totalLiquidityBalanceBase:{{
-      new BigNumber(totalLiquidityBalanceBase)
-        .dividedBy(Math.pow(10, 18))
-        .toFixed(4)
-    }}
-  </div>
-  <div>
-    totalCollateralBalanceBase:{{
-      new BigNumber(totalCollateralBalanceBase)
-        .dividedBy(Math.pow(10, 18))
-        .toFixed(4)
-    }}
-  </div>
-  <div>
-    totalBorrowBalanceBase:{{
-      new BigNumber(totalBorrowBalanceBase)
-        .dividedBy(Math.pow(10, 18))
-        .toFixed(4)
-    }}
-  </div>
-  <h3>LendingPoolInfo:</h3>
-  <p style="margin: 0">mara: {{ mara }}</p>
-  <p style="margin: 0">lastRewardBlock: {{ lastRewardBlock }}</p>
-  <p style="margin: 0">startBlock: {{ startBlock }}</p>
-  <p style="margin: 0">
-    tokensPerBlock:
-    {{ new BigNumber(tokensPerBlock).dividedBy(Math.pow(10, 18)).toFixed() }}
-  </p>
   <Space :size="10">
     <Button type="primary" size="large" @click="refresh" class="refresh"
       >Refresh</Button
@@ -65,11 +62,7 @@
       </template>
       <template v-if="column.keys === 'depositReward'">
         <div>
-          {{
-            new BigNumber(record?.depositReward)
-              .dividedBy(Math.pow(10, 18))
-              .toFixed()
-          }}
+          {{ record?.depositReward }}
         </div>
       </template>
       <template v-if="column.keys === 'borrowReward'">
@@ -1262,12 +1255,12 @@ const refresh = async () => {
         }
       });
     item.optimalUtilizationRate = optimalUtilizationRate;
-    //获取matoken
+    //获取depositReward
     let matokenContract = new props.relWeb3.eth.Contract(
       MaTokenMetadataAbi as any,
       resGetPoolBalance.maToken
     );
-    let matoken = await matokenContract.methods
+    let calculateMaraReward = await matokenContract.methods
       .calculateMaraReward(props.address)
       .call((err: any, result: any) => {
         if (!err) {
@@ -1276,7 +1269,6 @@ const refresh = async () => {
           return "--";
         }
       });
-    item.depositReward = matoken;
     let rewardToken = await matokenContract.methods
       .rewardToken()
       .call((err: any, result: any) => {
@@ -1303,6 +1295,21 @@ const refresh = async () => {
         });
       item.rewardTokenName = name;
     }
+    let depositCalculateTokenReward = await matokenContract.methods
+      .calculateTokenReward(props.address)
+      .call((err: any, result: any) => {
+        if (!err) {
+          return result;
+        } else {
+          return "--";
+        }
+      });
+    item.depositReward = `${new BigNumber(calculateMaraReward)
+      .dividedBy(Math.pow(10, 18))
+      .toFixed()} Mara + ${new BigNumber(depositCalculateTokenReward)
+      .dividedBy(Math.pow(10, 18))
+      .toFixed()} * 2 ${item.rewardTokenName}`;
+
     item.borrowReward = `${new BigNumber(calculateReward)
       .dividedBy(Math.pow(10, 18))
       .toFixed()} Mara + ${new BigNumber(calculateTokenReward)
@@ -1748,6 +1755,9 @@ const lendRepay = async () => {
     opacity: 0.5;
     div {
       padding: 0 20px;
+      h3 {
+        color: #fff;
+      }
     }
   }
 }
