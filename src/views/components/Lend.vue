@@ -712,6 +712,7 @@ const refresh = async () => {
         return "--";
       }
     });
+  totalLiquidityBalanceBase.value = userAccount.totalLiquidityBalanceBase;
   totalCollateralBalanceBase.value = userAccount.totalCollateralBalanceBase;
   totalBorrowBalanceBase.value = userAccount.totalBorrowBalanceBase;
   let userMara = await LendingPoolInfoContract.methods
