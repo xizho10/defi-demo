@@ -148,7 +148,7 @@
                 </p>
                 <div class="spaceSty" />
                 <div>
-                  poolInfos:
+                  <h3>poolInfos:</h3>
                   <p style="margin: 0">
                     aLPToken:
                     {{ record?.poolInfos?.aLPToken }}

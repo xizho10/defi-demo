@@ -33,9 +33,14 @@
         .toFixed(4)
     }}
   </div>
-  <Button type="primary" size="large" @click="refresh" class="refresh"
-    >Refresh</Button
-  >
+  <Space :size="10">
+    <Button type="primary" size="large" @click="refresh" class="refresh"
+      >Refresh</Button
+    >
+    <Button type="primary" size="large" @click="distributeMara" class="refresh"
+      >DistributeMara</Button
+    >
+  </Space>
   <Table :columns="columns" :data-source="data" :scroll="{ x: 1440 }">
     <template #bodyCell="{ column, record }">
       <template v-if="column.keys === 'active'">
@@ -255,19 +260,11 @@
       </p>
       <p style="margin: 0">
         multiplier:
-        {{
-          new BigNumber(record?.getPoolBalance?.multiplier)
-            .dividedBy(Math.pow(10, 18))
-            .toFixed(4)
-        }}
+        {{ record?.getPoolBalance?.multiplier }}
       </p>
       <p style="margin: 0">
         multiplierToken:
-        {{
-          new BigNumber(record?.getPoolBalance?.multiplierToken)
-            .dividedBy(Math.pow(10, 18))
-            .toFixed(4)
-        }}
+        {{ record?.getPoolBalance?.multiplierToken }}
       </p>
       <div class="spaceSty" />
       <h3>getPools:</h3>
@@ -689,6 +686,10 @@ const refresh = async () => {
     LendingPoolAbi as any,
     lendpoolContract
   );
+  let LendingPoolInfoContract = new props.relWeb3.eth.Contract(
+    LendingPoolInfoAbi as any,
+    lendpoolinfoContract
+  );
   let userAccount = await lendingPoolContract.methods
     .getUserAccount(props.address)
     .call((err: any, result: any) => {
@@ -1016,10 +1017,6 @@ const refresh = async () => {
         });
       item.APR = rate;
       //获取deposit APR和 borrow APR
-      let LendingPoolInfoContract = new props.relWeb3.eth.Contract(
-        LendingPoolInfoAbi as any,
-        lendpoolinfoContract
-      );
       let tokensPerBlock = await LendingPoolInfoContract.methods
         .tokensPerBlock()
         .call((err: any, result: any) => {
@@ -1308,6 +1305,29 @@ const refresh = async () => {
       item.maContractRewardTokenBalance = maContractRewardTokenBalance;
     }
   }
+};
+
+const distributeMara = async () => {
+  let LendingPoolInfoContract = new props.relWeb3.eth.Contract(
+    LendingPoolInfoAbi as any,
+    lendpoolinfoContract
+  );
+  let gasPrice = await props.relWeb3.eth.getGasPrice(); //获取当前gas价格
+  await LendingPoolInfoContract.methods.distributeMara().send(
+    {
+      from: props.address,
+      gasPrice: gasPrice,
+      gas: props.relWeb3.utils.toHex(900000),
+    },
+    (err: any, result: any) => {
+      if (!err) {
+        return result;
+      } else {
+        message.error(JSON.stringify(err.message));
+        return "--";
+      }
+    }
+  );
 };
 
 const clickSwitch = async (item: any) => {
