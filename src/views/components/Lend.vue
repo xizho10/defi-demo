@@ -84,11 +84,8 @@
           }}%
         </div>
       </template>
-      <template v-if="column.keys === 'depositAPR'">
-        <div>{{ record?.depositAPR }} Mara</div>
-      </template>
-      <template v-if="column.keys === 'borrowAPR'">
-        <div>{{ record?.borrowAPR }} Mara</div>
+      <template v-if="column.keys === 'rewards'">
+        <div>{{ record?.depositAPR }} + {{ record?.borrowAPR }} Mara</div>
       </template>
       <template v-if="column.keys === 'claim'">
         <Button type="primary" size="large" @click="() => claim(record)">
@@ -144,7 +141,9 @@
       <p style="margin: 0">contractAddress: {{ record?.contract }}</p>
       <div class="spaceSty" />
       <h3>Ma Token:</h3>
-      <p style="margin: 0">rewardToken: {{ record?.rewardToken }}</p>
+      <p style="margin: 0">
+        rewardToken: {{ record?.rewardToken }} {{ record?.rewardTokenName }}
+      </p>
       <p style="margin: 0">lastRewardBlock: {{ record?.lastRewardBlock }}</p>
       <p style="margin: 0">startBlock: {{ record?.startBlock }}</p>
       <p style="margin: 0">
@@ -613,14 +612,9 @@ const columns = [
     dataIndex: "APR",
   },
   {
-    title: "DepositAPR",
-    keys: "depositAPR",
-    dataIndex: "depositAPR",
-  },
-  {
-    title: "BorrowAPR",
-    keys: "borrowAPR",
-    dataIndex: "borrowAPR",
+    title: "Rewards",
+    keys: "rewards",
+    dataIndex: "rewards",
   },
   {
     title: "TotalLiquidity",
@@ -815,6 +809,7 @@ const refresh = async () => {
       disableUseAsCollateral: "",
       latestMultiplier: "",
       rewardToken: "",
+      rewardTokenName: "",
       lastRewardBlock: "",
       startBlock: "",
       tokensPerBlock: "",
@@ -1256,11 +1251,6 @@ const refresh = async () => {
           return "--";
         }
       });
-    item.borrowReward = `${new BigNumber(calculateReward)
-      .dividedBy(Math.pow(10, 18))
-      .toFixed()} + ${new BigNumber(calculateTokenReward)
-      .dividedBy(Math.pow(10, 18))
-      .toFixed()} * 2`;
     //获取optimalUtilizationRate
     let optimalUtilizationRate = await poolConfigContract.methods
       .getOptimalUtilizationRate()
@@ -1297,6 +1287,27 @@ const refresh = async () => {
         }
       });
     item.rewardToken = rewardToken;
+    if (rewardToken !== "0x0000000000000000000000000000000000000000") {
+      let maContract = new props.relWeb3.eth.Contract(
+        Erc20Abi as any,
+        rewardToken
+      );
+      let name = await maContract.methods
+        .name()
+        .call((err: any, result: any) => {
+          if (!err) {
+            return result;
+          } else {
+            return "--";
+          }
+        });
+      item.rewardTokenName = name;
+    }
+    item.borrowReward = `${new BigNumber(calculateReward)
+      .dividedBy(Math.pow(10, 18))
+      .toFixed()} Mara + ${new BigNumber(calculateTokenReward)
+      .dividedBy(Math.pow(10, 18))
+      .toFixed()} * 2 ${item.rewardTokenName}`;
     let lastRewardBlock = await matokenContract.methods
       .lastRewardBlock()
       .call((err: any, result: any) => {
