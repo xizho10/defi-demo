@@ -492,9 +492,25 @@
     </p>
     <p>
       Total Borrow Balance: 0 ~
-      {{ new BigNumber(BorrowBalance).multipliedBy(0.75).toFixed() }} $
+      {{
+        new BigNumber(BorrowBalance)
+          .multipliedBy(
+            new BigNumber(chooseItem?.collateralPercent).dividedBy(
+              Math.pow(10, 18)
+            )
+          )
+          .toFixed()
+      }}
+      $
     </p>
-    <p>Borrow Limit Reached: 75%</p>
+    <p>
+      Borrow Limit Reached:
+      {{
+        new BigNumber(chooseItem?.collateralPercent)
+          .dividedBy(Math.pow(10, 16))
+          .toFixed()
+      }}%
+    </p>
     <div class="spaceSty" />
     <Button type="primary" size="large" @click="lendBorrow"> borrow </Button>
   </Modal>
