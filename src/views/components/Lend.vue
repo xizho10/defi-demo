@@ -39,11 +39,7 @@
       </template>
       <template v-if="column.keys === 'borrowReward'">
         <div>
-          {{
-            new BigNumber(record?.borrowReward)
-              .dividedBy(Math.pow(10, 18))
-              .toFixed()
-          }}
+          {{ record?.borrowReward }}
         </div>
       </template>
       <template v-if="column.keys === 'APR'">
@@ -54,14 +50,10 @@
         </div>
       </template>
       <template v-if="column.keys === 'depositAPR'">
-        <div>
-          {{ new BigNumber(record?.depositAPR).multipliedBy(100).toFixed(2) }}%
-        </div>
+        <div>{{ record?.depositAPR }} Mara</div>
       </template>
       <template v-if="column.keys === 'borrowAPR'">
-        <div>
-          {{ new BigNumber(record?.borrowAPR).multipliedBy(100).toFixed(2) }}%
-        </div>
+        <div>{{ record?.borrowAPR }} Mara</div>
       </template>
       <template v-if="column.keys === 'claim'">
         <Button type="primary" size="large" @click="() => claim(record)">
@@ -187,9 +179,9 @@
         {{ record?.getPoolBalance?.status }}
       </p>
       <p style="margin: 0">
-        totalTokenReward:
+        totalMaraReward:
         {{
-          new BigNumber(record?.getPoolBalance?.totalTokenReward)
+          new BigNumber(record?.getPoolBalance?.totalMaraReward)
             .dividedBy(Math.pow(10, 18))
             .toFixed(4)
         }}
@@ -423,6 +415,7 @@ import {
 } from "ant-design-vue";
 import _ from "lodash";
 import LendingPoolAbi from "@/utils/LendingPool_metadata.abi.json";
+import LendingPoolInfoAbi from "@/utils/LendingPoolInfo_metadata.abi.json";
 import PoolConfigurationAbi from "@/utils/PoolConfiguration_metadata.abi.json";
 import MockPriceOracleAbi from "@/utils/MockPriceOracle_metadata.abi.json";
 import MaTokenMetadataAbi from "@/utils/MaToken_metadata.abi.json";
@@ -836,7 +829,6 @@ const refresh = async () => {
           return "--";
         }
       });
-    console.log("resGetPoolBalance.poolConfig", resGetPoolBalance.poolConfig);
     let poolConfigContract = new props.relWeb3.eth.Contract(
       PoolConfigurationAbi as any,
       resGetPoolBalance.poolConfig
@@ -856,6 +848,19 @@ const refresh = async () => {
         });
       item.APR = rate;
       //获取deposit APR和 borrow APR
+      let LendingPoolInfoContract = new props.relWeb3.eth.Contract(
+        LendingPoolInfoAbi as any,
+        lendpoolinfoContract
+      );
+      let tokensPerBlock = await LendingPoolInfoContract.methods
+        .tokensPerBlock()
+        .call((err: any, result: any) => {
+          if (!err) {
+            return result;
+          } else {
+            return "--";
+          }
+        });
       let utilizationRate = await poolConfigContract.methods
         .getUtilizationRate(resGetPoolBalance.totalBorrows, aprTotalLiquidity)
         .call((err: any, result: any) => {
@@ -886,28 +891,35 @@ const refresh = async () => {
         item.depositAPR = new BigNumber(depositAPR)
           .multipliedBy(item.totalBorrowInUSD)
           .dividedBy(allTotalBorrowInUSD)
+          .multipliedBy(new BigNumber(tokensPerBlock))
+          .dividedBy(Math.pow(10, 18))
           .toFixed(4);
         item.borrowAPR = new BigNumber(borrowAPR)
           .multipliedBy(item.totalBorrowInUSD)
           .dividedBy(allTotalBorrowInUSD)
+          .multipliedBy(new BigNumber(tokensPerBlock))
+          .dividedBy(Math.pow(10, 18))
           .toFixed(4);
       } else {
         let depositAPR =
           utilizationRate > Math.pow(10, 18)
             ? 0.5
-            : new BigNumber(0.5).multipliedBy(
-                new BigNumber(0.5)
-                  .multipliedBy(new BigNumber(Math.pow(10, 18)))
-                  .multipliedBy(
-                    new BigNumber(utilizationRate)
-                      .minus(new BigNumber(optimal))
-                      .dividedBy(
-                        new BigNumber(Math.pow(10, 18)).minus(
-                          new BigNumber(optimal)
+            : new BigNumber(0.5)
+                .multipliedBy(
+                  new BigNumber(0.5)
+                    .multipliedBy(new BigNumber(Math.pow(10, 18)))
+                    .multipliedBy(
+                      new BigNumber(utilizationRate)
+                        .minus(new BigNumber(optimal))
+                        .dividedBy(
+                          new BigNumber(Math.pow(10, 18)).minus(
+                            new BigNumber(optimal)
+                          )
                         )
-                      )
-                  )
-              );
+                    )
+                )
+                .multipliedBy(new BigNumber(tokensPerBlock))
+                .dividedBy(Math.pow(10, 18));
         let borrowAPR = new BigNumber(1).minus(depositAPR).toFixed(4);
         item.depositAPR = depositAPR;
         item.borrowAPR = borrowAPR;
@@ -969,7 +981,7 @@ const refresh = async () => {
       });
     item.liquidationBonusPercent = liquidationBonusPercent;
     //获取borrowReward
-    let borrowReward = await Contract.methods
+    let calculateReward = await Contract.methods
       .calculateReward(item.contract, props.address)
       .call((err: any, result: any) => {
         if (!err) {
@@ -978,7 +990,20 @@ const refresh = async () => {
           return "--";
         }
       });
-    item.borrowReward = borrowReward;
+    let calculateTokenReward = await Contract.methods
+      .calculateTokenReward(item.contract, props.address)
+      .call((err: any, result: any) => {
+        if (!err) {
+          return result;
+        } else {
+          return "--";
+        }
+      });
+    item.borrowReward = `${new BigNumber(calculateReward)
+      .dividedBy(Math.pow(10, 18))
+      .toFixed()} + ${new BigNumber(calculateTokenReward)
+      .dividedBy(Math.pow(10, 18))
+      .toFixed()}`;
     //获取optimalUtilizationRate
     let optimalUtilizationRate = await poolConfigContract.methods
       .getOptimalUtilizationRate()

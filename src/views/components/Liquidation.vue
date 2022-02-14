@@ -185,6 +185,30 @@ const refresh = async () => {
       assetPrice: "0",
       rate: "0",
     });
+    deepData.push({
+      key: item,
+      index: index,
+      address: "0x416627dA2AD387EEDCe2835B9450471dcb1A1f45",
+      coin: "",
+      contract: "",
+      abi: DAITokenAbi,
+      cannotLiquidation: true,
+      liquidityBalance: "0",
+      assetPrice: "0",
+      rate: "0",
+    });
+    deepData.push({
+      key: item,
+      index: index,
+      address: "0x96a424E5D342e1a57435080Ab0d128EaE2dBa6c6",
+      coin: "",
+      contract: "",
+      abi: DAITokenAbi,
+      cannotLiquidation: true,
+      liquidityBalance: "0",
+      assetPrice: "0",
+      rate: "0",
+    });
   });
   data.value = _.cloneDeep(deepData);
   let Contract = new props.relWeb3.eth.Contract(

@@ -13,7 +13,7 @@
       },
       {
         "internalType": "contract ILendingPool",
-        "name": "_lendingPoolAddress",
+        "name": "_lendingPool",
         "type": "address"
       },
       {
@@ -225,9 +225,15 @@
         "type": "address"
       }
     ],
-    "name": "claimCurrentRewardByLendingPool",
-    "outputs": [],
-    "stateMutability": "nonpayable",
+    "name": "calculateTokenReward",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
     "type": "function"
   },
   {
@@ -236,14 +242,9 @@
         "internalType": "address",
         "name": "_account",
         "type": "address"
-      },
-      {
-        "internalType": "uint256",
-        "name": "_amount",
-        "type": "uint256"
       }
     ],
-    "name": "claimCurrentRewardTokenAsBorrower",
+    "name": "claimCurrentRewardByLendingPool",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -310,6 +311,19 @@
     "type": "function"
   },
   {
+    "inputs": [],
+    "name": "lendingPool",
+    "outputs": [
+      {
+        "internalType": "contract ILendingPool",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
     "inputs": [
       {
         "internalType": "address",
@@ -342,7 +356,7 @@
   },
   {
     "inputs": [],
-    "name": "multiplierMax",
+    "name": "multiplierToken",
     "outputs": [
       {
         "internalType": "uint256",
@@ -385,6 +399,11 @@
         "internalType": "uint256",
         "name": "_amount",
         "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "_tokenAmount",
+        "type": "uint256"
       }
     ],
     "name": "receiveToken",
@@ -414,6 +433,19 @@
   },
   {
     "inputs": [],
+    "name": "rewardMultiplierMax",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
     "name": "rewardToken",
     "outputs": [
       {
@@ -423,6 +455,24 @@
       }
     ],
     "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "_account",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "_amount",
+        "type": "uint256"
+      }
+    ],
+    "name": "sendBorrowReward",
+    "outputs": [],
+    "stateMutability": "nonpayable",
     "type": "function"
   },
   {

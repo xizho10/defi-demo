@@ -311,7 +311,7 @@ const refresh = () => {
   });
 };
 
-const tabsChange = (item: string) => {
+const tabsChange = (item: any) => {
   if (item === "1") {
     refresh();
   } else if (item === "2") {

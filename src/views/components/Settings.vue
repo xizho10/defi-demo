@@ -143,6 +143,30 @@
             withdrawReserve
           </Button>
         </div>
+        <div class="spaceSty"></div>
+        <div>
+          <Input
+            class="farmInput"
+            placeholder="maToken"
+            :value="maToken"
+            @change="(e:any) => (maToken = e.target.value)"
+          />
+          <Input
+            class="farmInput"
+            placeholder="_rewardToken"
+            :value="rewardToken"
+            @change="(e:any) => (rewardToken = e.target.value)"
+          />
+          <Input
+            class="farmInput"
+            placeholder="_rewardMultiplier"
+            :value="rewardMultiplier"
+            @change="(e:any) => (rewardMultiplier = e.target.value)"
+          />
+          <Button type="primary" size="large" @click="setRewardToken">
+            setRewardToken
+          </Button>
+        </div>
       </TabPane>
     </Tabs>
   </div>
@@ -181,14 +205,14 @@ import {
 import _ from "lodash";
 import MockPriceOracleAbi from "@/utils/MockPriceOracle_metadata.abi.json";
 import LendingPoolAbi from "@/utils/LendingPool_metadata.abi.json";
+import MaTokenAbi from "@/utils/MaToken_metadata.abi.json";
 import InfoAbi from "@/utils/info.abi.json";
-import ManageAbi from "@/utils/manageAbi.abi.json";
 import ConfigParams from "@/views/components/ConfigParams.vue";
 import Erc20Abi from "@/utils/erc20.abi.json";
 import { getContracts } from "@/utils/api";
 const store = useStore();
 
-const { manageContract, infoContract, lendpoolContract, oracleContract } =
+const { infoContract, lendpoolContract, oracleContract } =
   store.getters.getGlobalContract;
 
 const props = defineProps<{
@@ -243,6 +267,10 @@ const maraPerBlock = ref<any>("");
 
 const farmIndex = ref<any>("");
 const farmStatus = ref<any>("");
+
+const maToken = ref<any>("");
+const rewardToken = ref<any>("");
+const rewardMultiplier = ref<any>("");
 
 onMounted(() => {
   refresh();
@@ -537,6 +565,32 @@ const setPriceOracle = async () => {
   let gasPrice = await props.relWeb3.eth.getGasPrice(); //获取当前gas价格
   await lendPoolContract.methods
     .setPriceOracle(setPriceOracleAddress.value)
+    .send(
+      {
+        from: props.address,
+        gasPrice: gasPrice,
+        gas: props.relWeb3.utils.toHex(3000000),
+      },
+      (err: any, result: any) => {
+        Visible.value = false;
+        if (!err) {
+          return result;
+        } else {
+          message.error(JSON.stringify(err.message));
+          return "--";
+        }
+      }
+    );
+};
+
+const setRewardToken = async () => {
+  let maTokenContract = new props.relWeb3.eth.Contract(
+    MaTokenAbi as any,
+    maToken.value
+  );
+  let gasPrice = await props.relWeb3.eth.getGasPrice(); //获取当前gas价格
+  await maTokenContract.methods
+    .setRewardToken(rewardToken.value, rewardMultiplier.value)
     .send(
       {
         from: props.address,
