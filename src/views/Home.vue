@@ -325,6 +325,10 @@ const columns = [
     dataIndex: "depositBalance",
   },
   {
+    title: "WalletBalance",
+    dataIndex: "WalletBalance",
+  },
+  {
     title: "My ALP balance",
     dataIndex: "share",
   },
@@ -579,6 +583,7 @@ const getBalanceOf = async (relWeb3: Web3, address: string) => {
       farmToken: "",
       totalInUSD: "",
       APR: "",
+      WalletBalance: "",
     });
   });
   data.value = _.cloneDeep(deepData);
@@ -672,7 +677,6 @@ const getBalanceOf = async (relWeb3: Web3, address: string) => {
         }
       });
     item.poolInfosValue = poolInfosValue;
-    console.log("poolInfosValue", poolInfosValue);
     //获取币种name
     let itemContract = new relWeb3.eth.Contract(
       Erc20Abi as any,
@@ -953,6 +957,23 @@ const getBalanceOf = async (relWeb3: Web3, address: string) => {
         }
       });
     item.userRewardDebts = userRewardDebts;
+    //获取WalletBalance
+    let LPTokenContract = new relWeb3.eth.Contract(
+      Erc20Abi as any,
+      poolInfos.lpToken
+    );
+    let WalletBalance = await LPTokenContract.methods
+      .balanceOf(address)
+      .call((err: any, result: any) => {
+        if (!err) {
+          return result;
+        } else {
+          return "--";
+        }
+      });
+    item.WalletBalance = new BigNumber(WalletBalance)
+      .dividedBy(Math.pow(10, 18))
+      .toFixed(4);
     //获取share
     let resShareBalance = await aLpContract.methods
       .balanceOf(address)
