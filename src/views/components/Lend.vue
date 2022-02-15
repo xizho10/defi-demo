@@ -2,6 +2,18 @@
   <div class="currencyContainer">
     <div class="currencyBottom">
       <div>
+        <h3>LendingPoolInfo:</h3>
+        <p style="margin: 0">mara: {{ mara }}</p>
+        <p style="margin: 0">lastRewardBlock: {{ lastRewardBlock }}</p>
+        <p style="margin: 0">startBlock: {{ startBlock }}</p>
+        <p style="margin: 0">
+          tokensPerBlock:
+          {{
+            new BigNumber(tokensPerBlock).dividedBy(Math.pow(10, 18)).toFixed()
+          }}
+        </p>
+      </div>
+      <div>
         <h3>getUserAccount:</h3>
         <div>
           totalLiquidityBalanceBase:{{
@@ -24,18 +36,6 @@
               .toFixed(4)
           }}
         </div>
-      </div>
-      <div>
-        <h3>LendingPoolInfo:</h3>
-        <p style="margin: 0">mara: {{ mara }}</p>
-        <p style="margin: 0">lastRewardBlock: {{ lastRewardBlock }}</p>
-        <p style="margin: 0">startBlock: {{ startBlock }}</p>
-        <p style="margin: 0">
-          tokensPerBlock:
-          {{
-            new BigNumber(tokensPerBlock).dividedBy(Math.pow(10, 18)).toFixed()
-          }}
-        </p>
       </div>
     </div>
   </div>
