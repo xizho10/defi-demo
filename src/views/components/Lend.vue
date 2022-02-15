@@ -147,10 +147,6 @@
             .toFixed()
         }}
       </p>
-      <p style="margin: 0">rewardMultiplier: {{ record?.rewardMultiplier }}</p>
-      <p style="margin: 0">
-        rewardMultiplierMax: {{ record?.rewardMultiplierMax }}
-      </p>
       <div class="spaceSty" />
       <h3>Balance:</h3>
       <p style="margin: 0">
@@ -806,8 +802,6 @@ const refresh = async () => {
       lastRewardBlock: "",
       startBlock: "",
       tokensPerBlock: "",
-      rewardMultiplier: "",
-      rewardMultiplierMax: "",
       rewardTokenBalance: "",
       getPoolValues: {},
     });
@@ -1308,13 +1302,13 @@ const refresh = async () => {
       .dividedBy(Math.pow(10, 18))
       .toFixed()} Mara + ${new BigNumber(depositCalculateTokenReward)
       .dividedBy(Math.pow(10, 18))
-      .toFixed()} * 2 ${item.rewardTokenName}`;
+      .toFixed()} ${item.rewardTokenName}`;
 
     item.borrowReward = `${new BigNumber(calculateReward)
       .dividedBy(Math.pow(10, 18))
       .toFixed()} Mara + ${new BigNumber(calculateTokenReward)
       .dividedBy(Math.pow(10, 18))
-      .toFixed()} * 2 ${item.rewardTokenName}`;
+      .toFixed()} ${item.rewardTokenName}`;
     let lastRewardBlock = await matokenContract.methods
       .lastRewardBlock()
       .call((err: any, result: any) => {
@@ -1345,26 +1339,6 @@ const refresh = async () => {
         }
       });
     item.tokensPerBlock = tokensPerBlock;
-    let rewardMultiplier = await matokenContract.methods
-      .rewardMultiplier()
-      .call((err: any, result: any) => {
-        if (!err) {
-          return result;
-        } else {
-          return "--";
-        }
-      });
-    item.rewardMultiplier = rewardMultiplier;
-    let rewardMultiplierMax = await matokenContract.methods
-      .rewardMultiplierMax()
-      .call((err: any, result: any) => {
-        if (!err) {
-          return result;
-        } else {
-          return "--";
-        }
-      });
-    item.rewardMultiplierMax = rewardMultiplierMax;
     if (rewardToken !== "0x0000000000000000000000000000000000000000") {
       let balanceContract = new props.relWeb3.eth.Contract(
         Erc20Abi as any,
