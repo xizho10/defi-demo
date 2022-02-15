@@ -13,6 +13,9 @@
         >
           <TabPane tab="Farm" key="1">
             <div>maraPerBlock: {{ maraPerBlock }}</div>
+            <Button type="primary" size="large" @click="refresh" class="refresh"
+              >Refresh</Button
+            >
             <Table :columns="columns" :data-source="data">
               <template #bodyCell="{ column, record }">
                 <template v-if="column.keys === 'lpAmountTotal'">
@@ -508,9 +511,6 @@ const getBorrowToken = async (lengthRes: any) => {
 };
 
 const farmOrLendOnChange = async (children: any) => {
-  if (children === "1") {
-    getBalanceOf(relWeb3.value, address.value);
-  }
   if (children === "4") {
     let Contract = new relWeb3.value.eth.Contract(
       AlphaReleaseRuleSelectorAbi as any,
@@ -526,6 +526,10 @@ const farmOrLendOnChange = async (children: any) => {
         }
       });
   }
+};
+
+const refresh = () => {
+  getBalanceOf(relWeb3.value, address.value);
 };
 
 const getBalanceOf = async (relWeb3: Web3, address: string) => {
