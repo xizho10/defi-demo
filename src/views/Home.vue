@@ -65,6 +65,11 @@
                 </template>
               </template>
               <template #expandedRowRender="{ record }">
+                <h3>poolInfo:</h3>
+                <p style="margin: 0">status: {{ record?.poolInfos.status }}</p>
+                <p style="margin: 0">
+                  lpToken: {{ record?.poolInfos.lpToken }}
+                </p>
                 <p style="margin: 0">
                   aLPToken: {{ record?.poolInfos.aLPToken }}
                 </p>
@@ -77,11 +82,8 @@
                 <p style="margin: 0">
                   lendingPoolAddress: {{ record?.poolInfos.lendingPoolAddress }}
                 </p>
-                <p style="margin: 0">
-                  lpToken: {{ record?.poolInfos.lpToken }}
-                </p>
-                <p style="margin: 0">status: {{ record?.poolInfos.status }}</p>
                 <div class="spaceSty" />
+                <h3>FarmBase:</h3>
                 <p style="margin: 0">
                   entranceFeeFactor: {{ record?.entranceFeeFactor }}
                 </p>
@@ -116,6 +118,7 @@
                   }}
                 </p>
                 <div class="spaceSty" />
+                <h3>Balance:</h3>
                 <p style="margin: 0">MaraAddress: {{ record?.MaraAddress }}</p>
                 <p style="margin: 0">
                   FarmManagerInfoMaraBalance:
@@ -131,7 +134,18 @@
                   userMaraBalance: {{ record?.userMaraBalance }}
                 </p>
                 <div class="spaceSty" />
+                <h3>AlpToken:</h3>
                 <p style="margin: 0">rewardToken: {{ record?.rewardToken }}</p>
+                <p style="margin: 0">
+                  rewardMultiplier: {{ record?.rewardMultiplier }}
+                </p>
+                <p style="margin: 0">
+                  multiplierMax: {{ record?.multiplierMax }}
+                </p>
+                <p style="margin: 0">
+                  userRewardDebts: {{ record?.userRewardDebts }}
+                </p>
+                <p style="margin: 0">maraPerAlp: {{ record?.maraPerAlp }}</p>
                 <p style="margin: 0">
                   userRewardTokenBalance: {{ record?.userRewardTokenBalance }}
                 </p>
@@ -139,41 +153,6 @@
                   aLpContractRewardTokenBalance:
                   {{ record?.aLpContractRewardTokenBalance }}
                 </p>
-                <p style="margin: 0">
-                  rewardMultiplier: {{ record?.rewardMultiplier }}
-                </p>
-                <p style="margin: 0">maraPerAlp: {{ record?.maraPerAlp }}</p>
-                <p style="margin: 0">
-                  userRewardDebts: {{ record?.userRewardDebts }}
-                </p>
-                <div class="spaceSty" />
-                <div>
-                  <h3>poolInfos:</h3>
-                  <p style="margin: 0">
-                    aLPToken:
-                    {{ record?.poolInfos?.aLPToken }}
-                  </p>
-                  <p style="margin: 0">
-                    farmAddress:
-                    {{ record?.poolInfos?.farmAddress }}
-                  </p>
-                  <p style="margin: 0">
-                    lastRewardBlock:
-                    {{ record?.poolInfos?.lastRewardBlock }}
-                  </p>
-                  <p style="margin: 0">
-                    lendingPoolAddress:
-                    {{ record?.poolInfos?.lendingPoolAddress }}
-                  </p>
-                  <p style="margin: 0">
-                    lpToken:
-                    {{ record?.poolInfos?.lpToken }}
-                  </p>
-                  <p style="margin: 0">
-                    status:
-                    {{ record?.poolInfos?.status }}
-                  </p>
-                </div>
               </template>
             </Table>
           </TabPane>
@@ -594,6 +573,7 @@ const getBalanceOf = async (relWeb3: Web3, address: string) => {
       userRewardTokenBalance: "",
       aLpContractRewardTokenBalance: "",
       rewardMultiplier: "",
+      multiplierMax: "",
       maraPerAlp: "",
       userRewardDebts: "",
       farmToken: "",
@@ -736,7 +716,7 @@ const getBalanceOf = async (relWeb3: Web3, address: string) => {
     item.withdrawFeeFactor =
       new BigNumber(10000 - WithdrawFeeFactor).dividedBy(100).toFixed() + "%";
     let WithdrawTaxRate = await farmBaseContract.methods
-      .withdrawFeeFactor()
+      .withdrawTaxRate()
       .call((err: any, result: any) => {
         if (!err) {
           return result;
@@ -949,6 +929,7 @@ const getBalanceOf = async (relWeb3: Web3, address: string) => {
           return "--";
         }
       });
+    item.multiplierMax = multiplierMax;
     item.rewardMultiplier = new BigNumber(rewardMultiplier)
       .dividedBy(multiplierMax)
       .toFixed();
