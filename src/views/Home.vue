@@ -593,7 +593,10 @@ const getBalanceOf = async (relWeb3: Web3, address: string) => {
   data.value = _.cloneDeep(deepData);
   let InfoContract = new relWeb3.eth.Contract(
     InfoAbi as any,
-    infoContract.value
+    infoContract.value,
+    {
+      from: address,
+    }
   );
   //获取maraPerBlock
   let MaraPerBlock = await InfoContract.methods
