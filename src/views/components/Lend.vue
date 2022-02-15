@@ -147,6 +147,8 @@
             .toFixed()
         }}
       </p>
+      <p style="margin: 0">multiplier: {{ record?.multiplier }}</p>
+      <p style="margin: 0">multiplierToken: {{ record?.multiplierToken }}</p>
       <div class="spaceSty" />
       <h3>Balance:</h3>
       <p style="margin: 0">
@@ -802,6 +804,8 @@ const refresh = async () => {
       lastRewardBlock: "",
       startBlock: "",
       tokensPerBlock: "",
+      multiplier: "",
+      multiplierToken: "",
       rewardTokenBalance: "",
       getPoolValues: {},
     });
@@ -1339,6 +1343,26 @@ const refresh = async () => {
         }
       });
     item.tokensPerBlock = tokensPerBlock;
+    let multiplier = await matokenContract.methods
+      .multiplier()
+      .call((err: any, result: any) => {
+        if (!err) {
+          return result;
+        } else {
+          return "--";
+        }
+      });
+    item.multiplier = multiplier;
+    let multiplierToken = await matokenContract.methods
+      .multiplierToken()
+      .call((err: any, result: any) => {
+        if (!err) {
+          return result;
+        } else {
+          return "--";
+        }
+      });
+    item.multiplierToken = multiplierToken;
     if (rewardToken !== "0x0000000000000000000000000000000000000000") {
       let balanceContract = new props.relWeb3.eth.Contract(
         Erc20Abi as any,

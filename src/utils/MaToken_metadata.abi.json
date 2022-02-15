@@ -89,12 +89,6 @@
         "internalType": "uint256",
         "name": "tokensPerBlock",
         "type": "uint256"
-      },
-      {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "rewardMultiplier",
-        "type": "uint256"
       }
     ],
     "name": "SetRewardToken",
@@ -458,32 +452,6 @@
   },
   {
     "inputs": [],
-    "name": "rewardMultiplier",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "rewardMultiplierMax",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
     "name": "rewardToken",
     "outputs": [
       {
@@ -528,11 +496,6 @@
       {
         "internalType": "uint256",
         "name": "_tokensPerBlock",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "_rewardMultiplier",
         "type": "uint256"
       }
     ],
