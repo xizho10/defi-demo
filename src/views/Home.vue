@@ -675,7 +675,6 @@ const getBalanceOf = async (relWeb3: Web3, address: string) => {
         }
       });
     item.poolInfos = poolInfos;
-    console.log("poolInfos", poolInfos);
     item.borrowToken = poolInfos.lpToken;
     //获取 poolInfos
     let poolInfosValue = await InfoContract.methods
