@@ -25,6 +25,13 @@
                     )
                   }}
                 </template>
+                <template v-if="column.keys === 'rewardTokenPerBlock'">
+                  {{
+                    new BigNumber(record?.rewardTokenPerBlock).dividedBy(
+                      Math.pow(10, 18).toFixed(4)
+                    )
+                  }}
+                </template>
                 <template v-if="column.keys === 'claim'">
                   <Button
                     type="primary"
@@ -80,7 +87,8 @@
                   farmAddress: {{ record?.poolInfos.farmAddress }}
                 </p>
                 <p style="margin: 0">
-                  lastRewardBlock: {{ record?.poolInfos.lastRewardBlock }}
+                  lastMaraRewardBlock:
+                  {{ record?.poolInfos.lastMaraRewardBlock }}
                 </p>
                 <p style="margin: 0">
                   lendingPoolAddress: {{ record?.poolInfos.lendingPoolAddress }}
@@ -305,10 +313,11 @@ const columns = [
     title: "APR",
     dataIndex: "APR",
   },
-  // {
-  //   title: "Farm APR",
-  //   dataIndex: "FARMAPR",
-  // },
+  {
+    title: "Farm APR",
+    key: "rewardTokenPerBlock",
+    dataIndex: "rewardTokenPerBlock",
+  },
   {
     title: "Farm Token",
     keys: "farmToken",
@@ -666,6 +675,7 @@ const getBalanceOf = async (relWeb3: Web3, address: string) => {
         }
       });
     item.poolInfos = poolInfos;
+    console.log("poolInfos", poolInfos);
     item.borrowToken = poolInfos.lpToken;
     //获取 poolInfos
     let poolInfosValue = await InfoContract.methods
