@@ -16,7 +16,7 @@
             <Button type="primary" size="large" @click="refresh" class="refresh"
               >Refresh</Button
             >
-            <Table :columns="columns" :data-source="data">
+            <Table :columns="columns" :data-source="data" :scroll="{ x: 1440 }">
               <template #bodyCell="{ column, record }">
                 <template v-if="column.keys === 'lpAmountTotal'">
                   {{
@@ -97,14 +97,7 @@
                   withdrawTaxRate: {{ record?.withdrawTaxRate }}
                 </p>
                 <p style="margin: 0">
-                  controllerFee: {{ record?.controllerFee }}
-                </p>
-                <p style="margin: 0">
                   rewardAddress: {{ record?.rewardAddress }}
-                </p>
-                <p style="margin: 0">buyBackRate: {{ record?.buyBackRate }}</p>
-                <p style="margin: 0">
-                  buyBackAddress: {{ record?.buyBackAddress }}
                 </p>
                 <p style="margin: 0">
                   slippageFactor: {{ record?.slippageFactor }}
@@ -140,15 +133,18 @@
                 <h3>AlpToken:</h3>
                 <p style="margin: 0">rewardToken: {{ record?.rewardToken }}</p>
                 <p style="margin: 0">
-                  rewardMultiplier: {{ record?.rewardMultiplier }}
-                </p>
-                <p style="margin: 0">
-                  multiplierMax: {{ record?.multiplierMax }}
-                </p>
-                <p style="margin: 0">
                   userRewardDebts: {{ record?.userRewardDebts }}
                 </p>
                 <p style="margin: 0">maraPerAlp: {{ record?.maraPerAlp }}</p>
+                <p style="margin: 0">
+                  rewardTokenStartBlock: {{ record?.rewardTokenStartBlock }}
+                </p>
+                <p style="margin: 0">
+                  lastRewardTokenBlock: {{ record?.lastRewardTokenBlock }}
+                </p>
+                <p style="margin: 0">
+                  rewardTokenPerBlock: {{ record?.rewardTokenPerBlock }}
+                </p>
                 <p style="margin: 0">
                   userRewardTokenBalance: {{ record?.userRewardTokenBalance }}
                 </p>
@@ -309,10 +305,10 @@ const columns = [
     title: "APR",
     dataIndex: "APR",
   },
-  {
-    title: "Farm APR",
-    dataIndex: "FARMAPR",
-  },
+  // {
+  //   title: "Farm APR",
+  //   dataIndex: "FARMAPR",
+  // },
   {
     title: "Farm Token",
     keys: "farmToken",
@@ -564,10 +560,7 @@ const getBalanceOf = async (relWeb3: Web3, address: string) => {
       entranceFeeFactor: "",
       withdrawFeeFactor: "",
       withdrawTaxRate: "",
-      controllerFee: "",
       rewardAddress: "",
-      buyBackRate: "",
-      buyBackAddress: "",
       slippageFactor: "",
       lastEarnBlock: "",
       lpAmountTotal: "",
@@ -576,12 +569,13 @@ const getBalanceOf = async (relWeb3: Web3, address: string) => {
       FarmManagerMaraBalance: "",
       aLpBalance: "",
       aLpMaraBalance: "",
+      rewardTokenStartBlock: "",
+      lastRewardTokenBlock: "",
+      rewardTokenPerBlock: "",
       userMaraBalance: "",
       rewardToken: "",
       userRewardTokenBalance: "",
       aLpContractRewardTokenBalance: "",
-      rewardMultiplier: "",
-      multiplierMax: "",
       maraPerAlp: "",
       userRewardDebts: "",
       farmToken: "",
@@ -737,17 +731,6 @@ const getBalanceOf = async (relWeb3: Web3, address: string) => {
       });
     item.withdrawTaxRate =
       new BigNumber(WithdrawTaxRate).dividedBy(100).toFixed() + "%";
-    let ControllerFee = await farmBaseContract.methods
-      .controllerFee()
-      .call((err: any, result: any) => {
-        if (!err) {
-          return result;
-        } else {
-          return "--";
-        }
-      });
-    item.controllerFee =
-      new BigNumber(ControllerFee).dividedBy(100).toFixed() + "%";
     let RewardAddress = await farmBaseContract.methods
       .rewardAddress()
       .call((err: any, result: any) => {
@@ -758,27 +741,6 @@ const getBalanceOf = async (relWeb3: Web3, address: string) => {
         }
       });
     item.rewardAddress = RewardAddress;
-    let BuyBackRate = await farmBaseContract.methods
-      .buyBackRate()
-      .call((err: any, result: any) => {
-        if (!err) {
-          return result;
-        } else {
-          return "--";
-        }
-      });
-    item.buyBackRate =
-      new BigNumber(BuyBackRate).dividedBy(100).toFixed() + "%";
-    let BuyBackAddress = await farmBaseContract.methods
-      .buyBackAddress()
-      .call((err: any, result: any) => {
-        if (!err) {
-          return result;
-        } else {
-          return "--";
-        }
-      });
-    item.buyBackAddress = BuyBackAddress;
     let SlippageFactor = await farmBaseContract.methods
       .slippageFactor()
       .call((err: any, result: any) => {
@@ -922,28 +884,6 @@ const getBalanceOf = async (relWeb3: Web3, address: string) => {
         });
       item.aLpContractRewardTokenBalance = aLpContractRewardTokenBalance;
     }
-    let rewardMultiplier = await aLpContract.methods
-      .rewardMultiplier()
-      .call((err: any, result: any) => {
-        if (!err) {
-          return result;
-        } else {
-          return "--";
-        }
-      });
-    let multiplierMax = await aLpContract.methods
-      .multiplierMax()
-      .call((err: any, result: any) => {
-        if (!err) {
-          return result;
-        } else {
-          return "--";
-        }
-      });
-    item.multiplierMax = multiplierMax;
-    item.rewardMultiplier = new BigNumber(rewardMultiplier)
-      .dividedBy(multiplierMax)
-      .toFixed();
     let maraPerAlp = await aLpContract.methods
       .maraPerAlp()
       .call((err: any, result: any) => {
@@ -964,6 +904,36 @@ const getBalanceOf = async (relWeb3: Web3, address: string) => {
         }
       });
     item.userRewardDebts = userRewardDebts;
+    let rewardTokenStartBlock = await aLpContract.methods
+      .rewardTokenStartBlock()
+      .call((err: any, result: any) => {
+        if (!err) {
+          return result;
+        } else {
+          return "--";
+        }
+      });
+    item.rewardTokenStartBlock = rewardTokenStartBlock;
+    let lastRewardTokenBlock = await aLpContract.methods
+      .lastRewardTokenBlock()
+      .call((err: any, result: any) => {
+        if (!err) {
+          return result;
+        } else {
+          return "--";
+        }
+      });
+    item.lastRewardTokenBlock = lastRewardTokenBlock;
+    let rewardTokenPerBlock = await aLpContract.methods
+      .rewardTokenPerBlock()
+      .call((err: any, result: any) => {
+        if (!err) {
+          return result;
+        } else {
+          return "--";
+        }
+      });
+    item.rewardTokenPerBlock = rewardTokenPerBlock;
     //获取WalletBalance
     let LPTokenContract = new relWeb3.eth.Contract(
       Erc20Abi as any,
@@ -1051,30 +1021,19 @@ const getBalanceOf = async (relWeb3: Web3, address: string) => {
               }
             });
     item.rewardPrice = rewardPrice;
-    // item.APR =
-    //   new BigNumber(maraPerBlock.value)
-    //     .multipliedBy(20 * 60 * 24 * 365)
-    //     .multipliedBy(
-    //       new BigNumber(maraPrice).plus(
-    //         new BigNumber(rewardPrice).multipliedBy(item.rewardMultiplier)
-    //       )
-    //     )
-    //     .dividedBy(new BigNumber(allTotalInUSD.value))
-    //     .dividedBy(Math.pow(10, 16))
-    //     .toFixed(4) + "%";
     item.APR = new BigNumber(maraPerBlock.value)
       // .multipliedBy(20 * 60 * 24 * 365)
       .multipliedBy(new BigNumber(item.totalInUSD))
       .dividedBy(new BigNumber(allTotalInUSD.value))
       .dividedBy(Math.pow(10, 18))
       .toFixed(4);
-    item.FARMAPR = new BigNumber(maraPerBlock.value)
-      // .multipliedBy(20 * 60 * 24 * 365)
-      .multipliedBy(new BigNumber(item.totalInUSD))
-      .multipliedBy(new BigNumber(item.rewardMultiplier))
-      .dividedBy(new BigNumber(allTotalInUSD.value))
-      .dividedBy(Math.pow(10, 18))
-      .toFixed(4);
+    // item.FARMAPR = new BigNumber(maraPerBlock.value)
+    //   // .multipliedBy(20 * 60 * 24 * 365)
+    //   .multipliedBy(new BigNumber(item.totalInUSD))
+    //   .multipliedBy(new BigNumber(item.rewardMultiplier))
+    //   .dividedBy(new BigNumber(allTotalInUSD.value))
+    //   .dividedBy(Math.pow(10, 18))
+    //   .toFixed(4);
   }
 };
 
