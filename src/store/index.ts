@@ -17,6 +17,7 @@ export default createStore({
       maraContract: "0x457D50587B5C4ac6Aea2cD31f42F7A54FFB4b25F",
       lendpoolconfigContract: "0xC0409716cF1bFbaffedf8Ab531Ef0AA5EcEba31a",
       lendpoolinfoContract: "0xFcAC356826c5573858CE57A056F7B28D5cA27cf6",
+      LendingInfoGetterContract: "0xca72A2670b244BEE7119b26B2B4F5cE8ADcbB78B",
       matokendeployerContract: "0x0Cf998cd41C07c62D269cB1c673Eb947159c5Fa7",
       lendpoolContract: "0x00d57505AAB580C4c4ee55B1d47D719618aC390A",
     },

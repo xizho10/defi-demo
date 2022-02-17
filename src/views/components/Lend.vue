@@ -49,9 +49,6 @@
   </Space>
   <Table :columns="columns" :data-source="data" :scroll="{ x: 1440 }">
     <template #bodyCell="{ column, record }">
-      <template v-if="column.keys === 'active'">
-        {{ record?.getPoolBalance?.status === "1" ? "true" : "false" }}
-      </template>
       <template v-if="column.keys === 'userUsePoolAsCollateral'">
         <div>
           <Switch
@@ -59,26 +56,6 @@
             @click="() => clickSwitch(record)"
           />
         </div>
-      </template>
-      <template v-if="column.keys === 'depositReward'">
-        <div>
-          {{ record?.depositReward }}
-        </div>
-      </template>
-      <template v-if="column.keys === 'borrowReward'">
-        <div>
-          {{ record?.borrowReward }}
-        </div>
-      </template>
-      <template v-if="column.keys === 'APR'">
-        <div>
-          {{
-            new BigNumber(record?.APR).dividedBy(Math.pow(10, 16)).toFixed(2)
-          }}%
-        </div>
-      </template>
-      <template v-if="column.keys === 'rewards'">
-        <div>{{ record?.depositAPR }} + {{ record?.borrowAPR }} Mara</div>
       </template>
       <template v-if="column.keys === 'claim'">
         <Button type="primary" size="large" @click="() => claim(record)">
@@ -130,7 +107,7 @@
         </Space>
       </template>
     </template>
-    <template #expandedRowRender="{ record }">
+    <template #expandedRowRender="{ record }" v-if="expandedRowRenderVisible">
       <p style="margin: 0">contractAddress: {{ record?.contract }}</p>
       <div class="spaceSty" />
       <h3>Ma Token:</h3>
@@ -573,6 +550,7 @@ import {
 import _ from "lodash";
 import LendingPoolAbi from "@/utils/LendingPool_metadata.abi.json";
 import LendingPoolInfoAbi from "@/utils/LendingPoolInfo_metadata.abi.json";
+import LendingPoolInfoGetterAbi from "@/utils/LendingInfoGetter_metadata.abi.json";
 import PoolConfigurationAbi from "@/utils/PoolConfiguration_metadata.abi.json";
 import MockPriceOracleAbi from "@/utils/MockPriceOracle_metadata.abi.json";
 import MaTokenMetadataAbi from "@/utils/MaToken_metadata.abi.json";
@@ -580,13 +558,22 @@ import Erc20Abi from "@/utils/erc20.abi.json";
 import { getContracts } from "@/utils/api";
 const store = useStore();
 
-const { lendpoolContract, oracleContract, maraContract, lendpoolinfoContract } =
-  store.getters.getGlobalContract;
+const {
+  lendpoolContract,
+  oracleContract,
+  maraContract,
+  lendpoolinfoContract,
+  LendingInfoGetterContract,
+} = store.getters.getGlobalContract;
 
 const columns = [
   {
     title: "Assets",
     dataIndex: "assets",
+  },
+  {
+    title: "WalletBalance",
+    dataIndex: "walletBalance",
   },
   {
     title: "Active",
@@ -598,14 +585,22 @@ const columns = [
     dataIndex: "ableBorrow",
   },
   {
-    title: "APR",
-    keys: "APR",
-    dataIndex: "APR",
+    title: "BorrowInterestRate",
+    dataIndex: "borrowInterestRate",
   },
   {
-    title: "Rewards",
-    keys: "rewards",
-    dataIndex: "rewards",
+    title: "Reward PerBlock",
+    dataIndex: "rewardPerBlock",
+  },
+  {
+    title: "LendersGainPerBlock",
+    keys: "lendersGainPerBlock",
+    dataIndex: "lendersGainPerBlock",
+  },
+  {
+    title: "BorrowersGainPerBlock",
+    keys: "borrowersGainPerBlock",
+    dataIndex: "borrowersGainPerBlock",
   },
   {
     title: "TotalLiquidity",
@@ -613,28 +608,28 @@ const columns = [
     dataIndex: "totalLiquidity",
   },
   {
-    title: "Liquidity	",
+    title: "totalAvailableLiquidity",
     keys: "totalAvailableLiquidity",
     dataIndex: "totalAvailableLiquidity",
   },
   {
-    title: "WalletBalance",
-    dataIndex: "walletBalance",
+    title: "TotalBorrows",
+    dataIndex: "totalBorrows",
   },
   {
-    title: "MyLiquidity",
-    keys: "liquidityBalance",
-    dataIndex: "liquidityBalance",
+    title: "MyLiquidityBalance",
+    keys: "compoundedLiquidityBalance",
+    dataIndex: "compoundedLiquidityBalance",
   },
   {
-    title: "DepositReward",
-    keys: "depositReward",
-    dataIndex: "depositReward",
+    title: "PendingBorrowReward",
+    keys: "pendingBorrowReward",
+    dataIndex: "pendingBorrowReward",
   },
   {
-    title: "BorrowReward",
-    keys: "borrowReward",
-    dataIndex: "borrowReward",
+    title: "PendingLendReward",
+    keys: "pendingLendReward",
+    dataIndex: "pendingLendReward",
   },
   {
     title: "Claim",
@@ -647,9 +642,9 @@ const columns = [
     dataIndex: "LiquidityOperation",
   },
   {
-    title: "MyBorrow",
-    keys: "borrowBalance",
-    dataIndex: "borrowBalance",
+    title: "MyBorrowBalance",
+    keys: "compoundedBorrowBalance",
+    dataIndex: "compoundedBorrowBalance",
   },
   {
     title: "Collateral",
@@ -690,6 +685,7 @@ const RepayVisible = ref<boolean>(false);
 const RepayModalTitle = ref<string | number>("repay");
 const LendRepayAmount = ref<string | number>("");
 const BorrowBalance = ref<string | number>("0");
+const expandedRowRenderVisible = ref<boolean>(false);
 
 onMounted(() => {
   refresh();
@@ -756,18 +752,34 @@ const refresh = async () => {
       }
     });
   tokensPerBlock.value = userTokensPerBlock;
+  let LendInfoGetterContract = new props.relWeb3.eth.Contract(
+    LendingPoolInfoGetterAbi as any,
+    LendingInfoGetterContract,
+    {
+      from: props.address,
+    }
+  );
+  let getPools = await LendInfoGetterContract.methods
+    .getPools()
+    .call((err: any, result: any) => {
+      if (!err) {
+        return result;
+      } else {
+        return "--";
+      }
+    });
+  console.log("getPools", getPools);
   //获取表格数据
-  let length = 0;
   let lengthRes = await getContracts();
   let lengthResponse = lengthRes.data.result;
   lengthResponse?.records &&
     lengthResponse.records.map((item: any) => {
-      if (item.name === "tokenListLength") {
-        length = item.address;
+      if (item.name === "contractDetail") {
+        expandedRowRenderVisible.value = Boolean(Number(item.address));
       }
     });
   let dataArr = [];
-  for (let i = 0; i < length; i++) {
+  for (let i = 0; i < getPools.length; i++) {
     dataArr.push(i);
   }
   let deepData: any = [];
@@ -777,23 +789,20 @@ const refresh = async () => {
       key: item,
       active: "",
       ableBorrow: "",
-      assets: "",
+      assets: getPools[index].symbol,
       liquidityBalance: 0,
-      APR: 0,
-      depositAPR: 0,
-      borrowAPR: 0,
       borrowBalance: "0",
-      walletBalance: "0",
       optimalUtilizationRate: "0",
       excessUtilizationRate: "",
       maxBorrowInUSD: "",
       totalLiquidity: "0",
       totalAvailableLiquidity: "0",
       totalBorrowInUSD: "",
-      depoistReward: "0",
-      borrowReward: "0",
       userUsePoolAsCollateral: false,
-      contract: "", //token合约地址
+      contract: getPools[index].token, //token合约地址
+      walletBalance: new BigNumber(getPools[index].balance)
+        .dividedBy(Math.pow(10, 18))
+        .toFixed(4),
       assetPrice: "", //token价格
       abi: Erc20Abi,
       borrowShares: "",
@@ -808,6 +817,10 @@ const refresh = async () => {
       multiplierToken: "",
       rewardTokenBalance: "",
       getPoolValues: {},
+      compoundedBorrowBalance: "0",
+      compoundedLiquidityBalance: "0",
+      pendingBorrowReward: "0",
+      pendingLendReward: "0",
     });
   });
   let Contract = new props.relWeb3.eth.Contract(
@@ -815,18 +828,9 @@ const refresh = async () => {
     lendpoolContract
   );
   let allTotalBorrowInUSD = "0";
-  for (let item of dataArr) {
-    let itemContract = await Contract.methods
-      .tokenList(item)
-      .call((err: any, result: any) => {
-        if (!err) {
-          return result;
-        } else {
-          return "--";
-        }
-      });
+  for (let item of deepData) {
     let resGetPoolBalance = await Contract.methods
-      .pools(itemContract)
+      .pools(item.contract)
       .call((err: any, result: any) => {
         if (!err) {
           return result;
@@ -835,7 +839,7 @@ const refresh = async () => {
         }
       });
     let totalBorrowInUSD = await Contract.methods
-      .totalBorrowInUSD(itemContract)
+      .totalBorrowInUSD(item.contract)
       .call((err: any, result: any) => {
         if (!err) {
           return result;
@@ -851,8 +855,9 @@ const refresh = async () => {
   }
   data.value = _.cloneDeep(deepData);
   for (let item of data.value) {
-    let itemContract = await Contract.methods
-      .tokenList(item.index)
+    //获取表格内容数据
+    let getPoolInfo = await LendInfoGetterContract.methods
+      .getPoolInfo(item.contract)
       .call((err: any, result: any) => {
         if (!err) {
           return result;
@@ -860,9 +865,78 @@ const refresh = async () => {
           return "--";
         }
       });
-    item.contract = itemContract;
+    item.active = getPoolInfo.active.toString();
+    item.ableBorrow = getPoolInfo.ableBorrow.toString();
+    item.borrowInterestRate = `${new BigNumber(getPoolInfo.borrowInterestRate)
+      .dividedBy(Math.pow(10, 16))
+      .toFixed(4)}%`;
+    item.rewardPerBlock = `${new BigNumber(getPoolInfo.maraPerBlock)
+      .dividedBy(Math.pow(10, 18))
+      .toFixed(4)} ${getPoolInfo.maraSymbol} + ${new BigNumber(
+      getPoolInfo.tokenPerBlock
+    )
+      .dividedBy(Math.pow(10, 18))
+      .toFixed(4)} ${getPoolInfo.rewardTokenSymbol}`;
+
+    item.maraSymbol = getPoolInfo.maraSymbol;
+    item.rewardTokenSymbol = getPoolInfo.rewardTokenSymbol;
+    item.totalAvailableLiquidity = new BigNumber(
+      getPoolInfo.totalAvailableLiquidity
+    )
+      .dividedBy(Math.pow(10, 18))
+      .toFixed(4);
+    item.totalBorrowShares = new BigNumber(getPoolInfo.totalBorrowShares)
+      .dividedBy(Math.pow(10, 18))
+      .toFixed(4);
+    item.totalBorrows = new BigNumber(getPoolInfo.totalBorrows)
+      .dividedBy(Math.pow(10, 18))
+      .toFixed(4);
+    item.totalLiquidity = new BigNumber(getPoolInfo.totalLiquidity)
+      .dividedBy(Math.pow(10, 18))
+      .toFixed(4);
+    let getUserInfo = await LendInfoGetterContract.methods
+      .getUserInfo(item.contract)
+      .call((err: any, result: any) => {
+        if (!err) {
+          return result;
+        } else {
+          return "--";
+        }
+      });
+    item.compoundedBorrowBalance = getUserInfo.compoundedBorrowBalance;
+    item.compoundedLiquidityBalance = getUserInfo.compoundedLiquidityBalance;
+    item.pendingBorrowReward = `${getUserInfo.pendingMaraBorrow} ${getPoolInfo.maraSymbol}+${getUserInfo.pendingRewardBorrow} ${getPoolInfo.rewardTokenSymbol}`;
+    item.pendingLendReward = `${getUserInfo.pendingMaraLend} ${getPoolInfo.maraSymbol}+${getUserInfo.pendingRewardLend} ${getPoolInfo.rewardTokenSymbol}`;
+    item.userUsePoolAsCollateral = getUserInfo.userUsePoolAsCollateral;
+    let getPoolGain = await LendInfoGetterContract.methods
+      .getPoolGain(item.contract)
+      .call((err: any, result: any) => {
+        if (!err) {
+          return result;
+        } else {
+          return "--";
+        }
+      });
+    item.lendersGainPerBlock = `${new BigNumber(
+      getPoolGain.lendersGainMaraPerBlock
+    )
+      .dividedBy(Math.pow(10, 18))
+      .toFixed(4)} ${getPoolInfo.maraSymbol} + ${new BigNumber(
+      getPoolGain.lendersGainTokenPerBlock
+    )
+      .dividedBy(Math.pow(10, 18))
+      .toFixed(4)} ${getPoolInfo.rewardTokenSymbol}`;
+    item.borrowersGainPerBlock = `${new BigNumber(
+      getPoolGain.borrowersGainMaraPerBlock
+    )
+      .dividedBy(Math.pow(10, 18))
+      .toFixed(4)} ${getPoolInfo.maraSymbol} + ${new BigNumber(
+      getPoolGain.borrowersGainTokenPerBlock
+    )
+      .dividedBy(Math.pow(10, 18))
+      .toFixed(4)} ${getPoolInfo.rewardTokenSymbol}`;
     let totalBorrowInUSD = await Contract.methods
-      .totalBorrowInUSD(itemContract)
+      .totalBorrowInUSD(item.contract)
       .call((err: any, result: any) => {
         if (!err) {
           return result;
@@ -876,7 +950,7 @@ const refresh = async () => {
       oracleContract
     );
     let assetPrice = await MockPriceOracleContract.methods
-      .getAssetPrice(itemContract)
+      .getAssetPrice(item.contract)
       .call((err: any, result: any) => {
         if (!err) {
           return result;
@@ -885,21 +959,6 @@ const refresh = async () => {
         }
       });
     item.assetPrice = assetPrice;
-    let Erc20Contract = new props.relWeb3.eth.Contract(
-      Erc20Abi as any,
-      itemContract
-    );
-    let name = await Erc20Contract.methods
-      .name()
-      .call((err: any, result: any) => {
-        if (!err) {
-          return result;
-        } else {
-          return "--";
-        }
-      });
-    item.assets = name;
-    item.key = name;
     let getUserPoolDataValue = await Contract.methods
       .getUserPoolData(props.address, item.contract)
       .call((err: any, result: any) => {
@@ -919,7 +978,6 @@ const refresh = async () => {
     )
       .dividedBy(Math.pow(10, 18))
       .toFixed(4);
-    item.userUsePoolAsCollateral = getUserPoolDataValue.userUsePoolAsCollateral;
     let userpooldata = await Contract.methods
       .userPoolData(props.address, item.contract)
       .call((err: any, result: any) => {
@@ -933,30 +991,6 @@ const refresh = async () => {
     item.disableUseAsCollateral = userpooldata.disableUseAsCollateral;
     item.latestMultiplier = userpooldata.latestMultiplier;
     item.latestTokenMultiplier = userpooldata.latestTokenMultiplier;
-    let totalLiquidity = await Contract.methods
-      .getTotalLiquidity(item.contract)
-      .call((err: any, result: any) => {
-        if (!err) {
-          return result;
-        } else {
-          return "--";
-        }
-      });
-    item.totalLiquidity = new BigNumber(totalLiquidity)
-      .dividedBy(Math.pow(10, 18))
-      .toFixed(4);
-    let totalAvailableLiquidity = await Contract.methods
-      .getTotalAvailableLiquidity(item.contract)
-      .call((err: any, result: any) => {
-        if (!err) {
-          return result;
-        } else {
-          return "--";
-        }
-      });
-    item.totalAvailableLiquidity = new BigNumber(totalAvailableLiquidity)
-      .dividedBy(Math.pow(10, 18))
-      .toFixed(4);
     let resGetPoolBalance = await Contract.methods
       .pools(item.contract)
       .call((err: any, result: any) => {
@@ -967,7 +1001,6 @@ const refresh = async () => {
         }
       });
     item.getPoolBalance = resGetPoolBalance;
-    item.ableBorrow = resGetPoolBalance.ableBorrow.toString();
     let getPoolValues = await Contract.methods
       .getPool(item.contract)
       .call((err: any, result: any) => {
@@ -1026,126 +1059,10 @@ const refresh = async () => {
         }
       });
     item.maraBalance = maraBalance;
-    //获取钱包代币余额
-    let balanceContract = new props.relWeb3.eth.Contract(
-      item.abi as any,
-      item.contract
-    );
-    let resBalance = await balanceContract.methods
-      .balanceOf(props.address)
-      .call((err: any, result: any) => {
-        if (!err) {
-          return result;
-        } else {
-          return "--";
-        }
-      });
-    let Balance = new BigNumber(resBalance)
-      .dividedBy(Math.pow(10, 18))
-      .toFixed(4);
-    item.walletBalance = Balance;
-    //获取APR和utilizationRate
-    let aprTotalLiquidity = await Contract.methods
-      .getTotalLiquidity(item.contract)
-      .call((err: any, result: any) => {
-        if (!err) {
-          return result;
-        } else {
-          return "--";
-        }
-      });
     let poolConfigContract = new props.relWeb3.eth.Contract(
       PoolConfigurationAbi as any,
       resGetPoolBalance.poolConfig
     );
-    if (Number(resGetPoolBalance.totalBorrows) !== 0) {
-      let rate = await poolConfigContract.methods
-        .calculateInterestRate(
-          resGetPoolBalance.totalBorrows,
-          aprTotalLiquidity
-        )
-        .call((err: any, result: any) => {
-          if (!err) {
-            return result;
-          } else {
-            return "--";
-          }
-        });
-      item.APR = rate;
-      //获取deposit APR和 borrow APR
-      let tokensPerBlock = await LendingPoolInfoContract.methods
-        .tokensPerBlock()
-        .call((err: any, result: any) => {
-          if (!err) {
-            return result;
-          } else {
-            return "--";
-          }
-        });
-      let utilizationRate = await poolConfigContract.methods
-        .getUtilizationRate(resGetPoolBalance.totalBorrows, aprTotalLiquidity)
-        .call((err: any, result: any) => {
-          if (!err) {
-            return result;
-          } else {
-            return "--";
-          }
-        });
-      let optimal = await poolConfigContract.methods
-        .getOptimalUtilizationRate()
-        .call((err: any, result: any) => {
-          if (!err) {
-            return result;
-          } else {
-            return "--";
-          }
-        });
-      if (utilizationRate <= optimal) {
-        let depositAPR =
-          Number(optimal) === 0
-            ? 0
-            : new BigNumber(utilizationRate)
-                .dividedBy(new BigNumber(optimal))
-                .multipliedBy(0.5)
-                .toFixed(4);
-        let borrowAPR = new BigNumber(1).minus(depositAPR).toFixed(4);
-        item.depositAPR = new BigNumber(depositAPR)
-          .multipliedBy(item.totalBorrowInUSD)
-          .dividedBy(allTotalBorrowInUSD)
-          .multipliedBy(new BigNumber(tokensPerBlock))
-          .dividedBy(Math.pow(10, 18))
-          .toFixed(4);
-        item.borrowAPR = new BigNumber(borrowAPR)
-          .multipliedBy(item.totalBorrowInUSD)
-          .dividedBy(allTotalBorrowInUSD)
-          .multipliedBy(new BigNumber(tokensPerBlock))
-          .dividedBy(Math.pow(10, 18))
-          .toFixed(4);
-      } else {
-        let depositAPR =
-          utilizationRate > Math.pow(10, 18)
-            ? 0.5
-            : new BigNumber(0.5)
-                .multipliedBy(
-                  new BigNumber(0.5)
-                    .multipliedBy(new BigNumber(Math.pow(10, 18)))
-                    .multipliedBy(
-                      new BigNumber(utilizationRate)
-                        .minus(new BigNumber(optimal))
-                        .dividedBy(
-                          new BigNumber(Math.pow(10, 18)).minus(
-                            new BigNumber(optimal)
-                          )
-                        )
-                    )
-                )
-                .multipliedBy(new BigNumber(tokensPerBlock))
-                .dividedBy(Math.pow(10, 18));
-        let borrowAPR = new BigNumber(1).minus(depositAPR).toFixed(4);
-        item.depositAPR = depositAPR;
-        item.borrowAPR = borrowAPR;
-      }
-    }
     //获取baseBorrowRate
     let baseBorrowRate = await poolConfigContract.methods
       .baseBorrowRate()
@@ -1223,25 +1140,6 @@ const refresh = async () => {
         }
       });
     item.maxBorrowInUSD = maxBorrowInUSD;
-    //获取borrowReward
-    let calculateReward = await Contract.methods
-      .calculateReward(item.contract, props.address)
-      .call((err: any, result: any) => {
-        if (!err) {
-          return result;
-        } else {
-          return "--";
-        }
-      });
-    let calculateTokenReward = await Contract.methods
-      .calculateTokenReward(item.contract, props.address)
-      .call((err: any, result: any) => {
-        if (!err) {
-          return result;
-        } else {
-          return "--";
-        }
-      });
     //获取optimalUtilizationRate
     let optimalUtilizationRate = await poolConfigContract.methods
       .getOptimalUtilizationRate()
@@ -1258,15 +1156,6 @@ const refresh = async () => {
       MaTokenMetadataAbi as any,
       resGetPoolBalance.maToken
     );
-    let calculateMaraReward = await matokenContract.methods
-      .calculateMaraReward(props.address)
-      .call((err: any, result: any) => {
-        if (!err) {
-          return result;
-        } else {
-          return "--";
-        }
-      });
     let rewardToken = await matokenContract.methods
       .rewardToken()
       .call((err: any, result: any) => {
@@ -1293,26 +1182,6 @@ const refresh = async () => {
         });
       item.rewardTokenName = name;
     }
-    let depositCalculateTokenReward = await matokenContract.methods
-      .calculateTokenReward(props.address)
-      .call((err: any, result: any) => {
-        if (!err) {
-          return result;
-        } else {
-          return "--";
-        }
-      });
-    item.depositReward = `${new BigNumber(calculateMaraReward)
-      .dividedBy(Math.pow(10, 18))
-      .toFixed()} Mara + ${new BigNumber(depositCalculateTokenReward)
-      .dividedBy(Math.pow(10, 18))
-      .toFixed()} ${item.rewardTokenName}`;
-
-    item.borrowReward = `${new BigNumber(calculateReward)
-      .dividedBy(Math.pow(10, 18))
-      .toFixed()} Mara + ${new BigNumber(calculateTokenReward)
-      .dividedBy(Math.pow(10, 18))
-      .toFixed()} ${item.rewardTokenName}`;
     let lastRewardBlock = await matokenContract.methods
       .lastRewardBlock()
       .call((err: any, result: any) => {

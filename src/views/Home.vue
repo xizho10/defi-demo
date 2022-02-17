@@ -295,6 +295,9 @@ const manageContract = ref(getGlobalContract.manageContract);
 const infoContract = ref(getGlobalContract.infoContract);
 const oracleContract = ref(getGlobalContract.oracleContract);
 const lendpoolContract = ref(getGlobalContract.lendpoolContract);
+const LendingInfoGetterContract = ref(
+  getGlobalContract.LendingInfoGetterContract
+);
 const farmPoolContract = ref(getGlobalContract.farmPoolContract);
 const alphaReleaseRuleSelectorContract = ref(
   getGlobalContract.alphaReleaseRuleSelectorContract
@@ -416,6 +419,9 @@ const connectClick = () => {
               break;
             case "lendpoolContract":
               lendpoolContract.value = item.address;
+              break;
+            case "LendingInfoGetterContract":
+              LendingInfoGetterContract.value = item.address;
               break;
             case "oracleContract":
               oracleContract.value = item.address;
