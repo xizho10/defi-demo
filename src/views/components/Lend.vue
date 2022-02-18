@@ -622,14 +622,14 @@ const columns = [
     dataIndex: "compoundedLiquidityBalance",
   },
   {
-    title: "PendingBorrowReward",
-    keys: "pendingBorrowReward",
-    dataIndex: "pendingBorrowReward",
-  },
-  {
     title: "PendingLendReward",
     keys: "pendingLendReward",
     dataIndex: "pendingLendReward",
+  },
+  {
+    title: "PendingBorrowReward",
+    keys: "pendingBorrowReward",
+    dataIndex: "pendingBorrowReward",
   },
   {
     title: "Claim",
@@ -903,10 +903,30 @@ const refresh = async () => {
           return "--";
         }
       });
-    item.compoundedBorrowBalance = getUserInfo.compoundedBorrowBalance;
-    item.compoundedLiquidityBalance = getUserInfo.compoundedLiquidityBalance;
-    item.pendingBorrowReward = `${getUserInfo.pendingMaraBorrow} ${getPoolInfo.maraSymbol}+${getUserInfo.pendingRewardBorrow} ${getPoolInfo.rewardTokenSymbol}`;
-    item.pendingLendReward = `${getUserInfo.pendingMaraLend} ${getPoolInfo.maraSymbol}+${getUserInfo.pendingRewardLend} ${getPoolInfo.rewardTokenSymbol}`;
+    item.compoundedBorrowBalance = new BigNumber(
+      getUserInfo.compoundedBorrowBalance
+    )
+      .dividedBy(Math.pow(10, 18))
+      .toFixed(4);
+    item.compoundedLiquidityBalance = new BigNumber(
+      getUserInfo.compoundedLiquidityBalance
+    )
+      .dividedBy(Math.pow(10, 18))
+      .toFixed(4);
+    item.pendingBorrowReward = `${new BigNumber(getUserInfo.pendingMaraBorrow)
+      .dividedBy(Math.pow(10, 18))
+      .toFixed(4)} ${getPoolInfo.maraSymbol}+${new BigNumber(
+      getUserInfo.pendingRewardBorrow
+    )
+      .dividedBy(Math.pow(10, 18))
+      .toFixed(4)} ${getPoolInfo.rewardTokenSymbol}`;
+    item.pendingLendReward = `${new BigNumber(getUserInfo.pendingMaraLend)
+      .dividedBy(Math.pow(10, 18))
+      .toFixed(4)} ${getPoolInfo.maraSymbol}+${new BigNumber(
+      getUserInfo.pendingRewardLend
+    )
+      .dividedBy(Math.pow(10, 18))
+      .toFixed(4)} ${getPoolInfo.rewardTokenSymbol}`;
     item.userUsePoolAsCollateral = getUserInfo.userUsePoolAsCollateral;
     let getPoolGain = await LendInfoGetterContract.methods
       .getPoolGain(item.contract)
