@@ -12,7 +12,6 @@
           @change="farmOrLendOnChange"
         >
           <TabPane tab="Farm" key="1">
-            <div>maraPerBlock: {{ maraPerBlock }}</div>
             <Button type="primary" size="large" @click="refresh" class="refresh"
               >Refresh</Button
             >
@@ -215,7 +214,7 @@
       @change="(e) => (withdrawAmount = e.target.value)"
     />
     <div class="spaceSty" />
-    <div>MAX: {{ chooseItem.depositBalance }}</div>
+    <div>MAX: {{ chooseItem.userLiquidity }}</div>
     <div class="spaceSty" />
     <Button type="primary" size="large" @click="withdraw"> Withdraw </Button>
   </Modal>
@@ -282,6 +281,7 @@ import BigNumber from "bignumber.js";
 import Erc20Abi from "@/utils/erc20.abi.json";
 import ManageAbi from "@/utils/manageAbi.abi.json";
 import InfoAbi from "@/utils/info.abi.json";
+import FarmManagerInfoGetterAbi from "@/utils/FarmManagerInfoGetter_metadata.abi.json";
 import MockPriceOracleAbi from "@/utils/MockPriceOracle_metadata.abi.json";
 import LendingPoolAbi from "@/utils/LendingPool_metadata.abi.json";
 import AlphaReleaseRuleSelectorAbi from "@/utils/AlphaReleaseRuleSelector_metadata.json";
@@ -302,6 +302,9 @@ const farmPoolContract = ref(getGlobalContract.farmPoolContract);
 const alphaReleaseRuleSelectorContract = ref(
   getGlobalContract.alphaReleaseRuleSelectorContract
 );
+const FarmManagerInfoGetterContract = ref(
+  getGlobalContract.FarmManagerInfoGetterContract
+);
 
 const columns = [
   {
@@ -313,13 +316,8 @@ const columns = [
     dataIndex: "lpTokenName",
   },
   {
-    title: "APR",
+    title: "Reward PerBlock",
     dataIndex: "APR",
-  },
-  {
-    title: "Farm APR",
-    key: "rewardTokenPerBlock",
-    dataIndex: "rewardTokenPerBlock",
   },
   {
     title: "Farm Token",
@@ -328,12 +326,12 @@ const columns = [
   },
   {
     title: "Liquidity",
-    keys: "lpAmountTotal",
-    dataIndex: "lpAmountTotal",
+    keys: "liquidity",
+    dataIndex: "liquidity",
   },
   {
     title: "My Liquidity",
-    dataIndex: "depositBalance",
+    dataIndex: "userLiquidity",
   },
   {
     title: "WalletBalance",
@@ -341,11 +339,11 @@ const columns = [
   },
   {
     title: "My ALP balance",
-    dataIndex: "share",
+    dataIndex: "userAlpBalance",
   },
   {
     title: "ALP TotalSupply",
-    dataIndex: "totalSupply",
+    dataIndex: "alpTotalSupply",
   },
   {
     title: "Pending reward",
@@ -545,12 +543,14 @@ const refresh = () => {
 
 const getBalanceOf = async (relWeb3: Web3, address: string) => {
   let dataArr = [];
-  let poolContract = new relWeb3.eth.Contract(
-    InfoAbi as any,
-    infoContract.value
+
+  let FarmManagerInfoGetContract = new relWeb3.eth.Contract(
+    FarmManagerInfoGetterAbi as any,
+    FarmManagerInfoGetterContract.value
   );
-  let length = await poolContract.methods
-    .poolLength()
+
+  let getPools = await FarmManagerInfoGetContract.methods
+    .getPools()
     .call((err: any, result: any) => {
       if (!err) {
         return result;
@@ -558,15 +558,15 @@ const getBalanceOf = async (relWeb3: Web3, address: string) => {
         return "--";
       }
     });
-  for (let i = 0; i < length; i++) {
+  for (let i = 0; i < getPools.length; i++) {
     dataArr.push(i);
   }
   let deepData: any = [];
-  dataArr.map((item, index) => {
+  dataArr.map((item: any, index) => {
     deepData.push({
       index: index,
       key: index,
-      lpTokenName: "",
+      lpTokenName: getPools[index].symbol,
       share: "0%",
       depositBalance: "0",
       poolInfos: {},
@@ -578,7 +578,6 @@ const getBalanceOf = async (relWeb3: Web3, address: string) => {
       rewardAddress: "",
       slippageFactor: "",
       lastEarnBlock: "",
-      lpAmountTotal: "",
       MaraAddress: "",
       FarmManagerInfoMaraBalance: "",
       FarmManagerMaraBalance: "",
@@ -588,41 +587,28 @@ const getBalanceOf = async (relWeb3: Web3, address: string) => {
       lastRewardTokenBlock: "",
       rewardTokenPerBlock: "",
       userMaraBalance: "",
-      rewardToken: "",
+      rewardToken: getPools[index].rewardToken,
       userRewardTokenBalance: "",
       aLpContractRewardTokenBalance: "",
       maraPerAlp: "",
       userRewardDebts: "",
-      farmToken: "",
+      farmToken:
+        getPools[index].rewardToken ===
+        "0x0000000000000000000000000000000000000000"
+          ? getPools[index].symbol
+          : getPools[index].rewardTokenSymbol,
       totalInUSD: "",
       APR: "",
       WalletBalance: "",
+      userLiquidity: "",
+      liquidity: "",
+      rewardTokenSymbol: getPools[index].rewardTokenSymbol,
     });
   });
   data.value = _.cloneDeep(deepData);
-  let InfoContract = new relWeb3.eth.Contract(
-    InfoAbi as any,
-    infoContract.value,
-    {
-      from: address,
-    }
-  );
-  //获取maraPerBlock
-  let MaraPerBlock = await InfoContract.methods
-    .maraPerBlock()
-    .call((err: any, result: any) => {
-      if (!err) {
-        return result;
-      } else {
-        return "--";
-      }
-    });
-  maraPerBlock.value = MaraPerBlock;
-  let defaultTotalInUSD = "0";
   for (let item of data.value) {
-    // //获取tootalInUSD
-    let totalInUSD = await InfoContract.methods
-      .getDepositAmountInUSD(item.index)
+    let getPoolInfo = await FarmManagerInfoGetContract.methods
+      .getPoolInfo(item.index)
       .call((err: any, result: any) => {
         if (!err) {
           return result;
@@ -630,49 +616,19 @@ const getBalanceOf = async (relWeb3: Web3, address: string) => {
           return "--";
         }
       });
-    defaultTotalInUSD = new BigNumber(defaultTotalInUSD)
-      .plus(totalInUSD)
-      .toFixed();
-  }
-  allTotalInUSD.value = defaultTotalInUSD;
-  for (let item of data.value) {
-    let totalInUSD = await InfoContract.methods
-      .getDepositAmountInUSD(item.index)
-      .call((err: any, result: any) => {
-        if (!err) {
-          return result;
-        } else {
-          return "--";
-        }
-      });
-    item.totalInUSD = totalInUSD;
-    let resDepositBalance = await InfoContract.methods
-      .getStakedTokens(item.index, address)
-      .call((err: any, result: any) => {
-        if (!err) {
-          return result;
-        } else {
-          return "--";
-        }
-      });
-    let DepositBalance = new BigNumber(resDepositBalance)
+    item.APR = `${new BigNumber(getPoolInfo.maraPerBlock)
+      .dividedBy(Math.pow(10, 18))
+      .toFixed(4)} MARA + ${new BigNumber(getPoolInfo.tokenPerBlock)
+      .dividedBy(Math.pow(10, 18))
+      .toFixed(4)} ${item.rewardTokenSymbol}`;
+    item.alpTotalSupply = new BigNumber(getPoolInfo.alpTotalSupply)
       .dividedBy(Math.pow(10, 18))
       .toFixed(4);
-    item.depositBalance = DepositBalance;
-    let pendingReward = await InfoContract.methods
-      .getPendingRewardToken(item.index)
-      .call((err: any, result: any) => {
-        if (!err) {
-          return result;
-        } else {
-          return "--";
-        }
-      });
-    item.pendingReward = new BigNumber(pendingReward.maraAmount)
+    item.liquidity = new BigNumber(getPoolInfo.liquidity)
       .dividedBy(Math.pow(10, 18))
       .toFixed(4);
-    let poolInfos = await InfoContract.methods
-      .getPool(item.index)
+    let getUserInfo = await FarmManagerInfoGetContract.methods
+      .getUserInfo(item.index)
       .call((err: any, result: any) => {
         if (!err) {
           return result;
@@ -680,375 +636,14 @@ const getBalanceOf = async (relWeb3: Web3, address: string) => {
           return "--";
         }
       });
-    item.poolInfos = poolInfos;
-    item.borrowToken = poolInfos.lpToken;
-    //获取 poolInfos
-    let poolInfosValue = await InfoContract.methods
-      .poolInfos(item.index)
-      .call((err: any, result: any) => {
-        if (!err) {
-          return result;
-        } else {
-          return "--";
-        }
-      });
-    item.poolInfosValue = poolInfosValue;
-    //获取币种name
-    let itemContract = new relWeb3.eth.Contract(
-      Erc20Abi as any,
-      poolInfos.lpToken
-    );
-    let name = await itemContract.methods
-      .name()
-      .call((err: any, result: any) => {
-        if (!err) {
-          return result;
-        } else {
-          return "--";
-        }
-      });
-    item.lpTokenName = name;
-    //初始化farmBase合约
-    let farmBaseContract = new relWeb3.eth.Contract(
-      FarmBase as any,
-      poolInfos.farmAddress
-    );
-    let EntranceFeeFactor = await farmBaseContract.methods
-      .entranceFeeFactor()
-      .call((err: any, result: any) => {
-        if (!err) {
-          return result;
-        } else {
-          return "--";
-        }
-      });
-    item.entranceFeeFactor =
-      new BigNumber(10000 - EntranceFeeFactor).dividedBy(100).toFixed() + "%";
-    let WithdrawFeeFactor = await farmBaseContract.methods
-      .withdrawFeeFactor()
-      .call((err: any, result: any) => {
-        if (!err) {
-          return result;
-        } else {
-          return "--";
-        }
-      });
-    item.withdrawFeeFactor =
-      new BigNumber(10000 - WithdrawFeeFactor).dividedBy(100).toFixed() + "%";
-    let WithdrawTaxRate = await farmBaseContract.methods
-      .withdrawTaxRate()
-      .call((err: any, result: any) => {
-        if (!err) {
-          return result;
-        } else {
-          return "--";
-        }
-      });
-    item.withdrawTaxRate =
-      new BigNumber(WithdrawTaxRate).dividedBy(100).toFixed() + "%";
-    let RewardAddress = await farmBaseContract.methods
-      .rewardAddress()
-      .call((err: any, result: any) => {
-        if (!err) {
-          return result;
-        } else {
-          return "--";
-        }
-      });
-    item.rewardAddress = RewardAddress;
-    let SlippageFactor = await farmBaseContract.methods
-      .slippageFactor()
-      .call((err: any, result: any) => {
-        if (!err) {
-          return result;
-        } else {
-          return "--";
-        }
-      });
-    item.slippageFactor = SlippageFactor;
-    let LastEarnBlock = await farmBaseContract.methods
-      .lastEarnBlock()
-      .call((err: any, result: any) => {
-        if (!err) {
-          return result;
-        } else {
-          return "--";
-        }
-      });
-    item.lastEarnBlock = LastEarnBlock;
-    let itemLpAmountTotal = await farmBaseContract.methods
-      .lpAmountTotal()
-      .call((err: any, result: any) => {
-        if (!err) {
-          return result;
-        } else {
-          return "--";
-        }
-      });
-    item.lpAmountTotal = itemLpAmountTotal;
-    //MaraAddress
-    let MaraAddress = await InfoContract.methods
-      .mara()
-      .call((err: any, result: any) => {
-        if (!err) {
-          return result;
-        } else {
-          return "--";
-        }
-      });
-    item.MaraAddress = MaraAddress;
-    let farmManagerContract = new relWeb3.eth.Contract(
-      Erc20Abi as any,
-      MaraAddress
-    );
-    let FarmManagerInfoMaraBalance = await farmManagerContract.methods
-      .balanceOf(infoContract.value)
-      .call((err: any, result: any) => {
-        if (!err) {
-          return result;
-        } else {
-          return "--";
-        }
-      });
-    item.FarmManagerInfoMaraBalance = FarmManagerInfoMaraBalance;
-    let FarmManagerMaraBalance = await farmManagerContract.methods
-      .balanceOf(manageContract.value)
-      .call((err: any, result: any) => {
-        if (!err) {
-          return result;
-        } else {
-          return "--";
-        }
-      });
-    item.FarmManagerMaraBalance = FarmManagerMaraBalance;
-    let aLpMaraBalance = await farmManagerContract.methods
-      .balanceOf(poolInfos.aLPToken)
-      .call((err: any, result: any) => {
-        if (!err) {
-          return result;
-        } else {
-          return "--";
-        }
-      });
-    item.aLpMaraBalance = aLpMaraBalance;
-    let userMaraBalance = await farmManagerContract.methods
-      .balanceOf(address)
-      .call((err: any, result: any) => {
-        if (!err) {
-          return result;
-        } else {
-          return "--";
-        }
-      });
-    item.userMaraBalance = userMaraBalance;
-    let aLpContract = new relWeb3.eth.Contract(
-      AlpAbi as any,
-      poolInfos.aLPToken
-    );
-    let rewardToken = await aLpContract.methods
-      .rewardToken()
-      .call((err: any, result: any) => {
-        if (!err) {
-          return result;
-        } else {
-          return "--";
-        }
-      });
-    item.rewardToken = rewardToken;
-    if (rewardToken !== "0x0000000000000000000000000000000000000000") {
-      let Erc20Contract = new relWeb3.eth.Contract(
-        Erc20Abi as any,
-        rewardToken
-      );
-      let name = await Erc20Contract.methods
-        .name()
-        .call((err: any, result: any) => {
-          if (!err) {
-            return result;
-          } else {
-            return "--";
-          }
-        });
-      item.farmToken = name;
-    } else {
-      item.farmToken = item.lpTokenName;
-    }
-    if (rewardToken !== "0x0000000000000000000000000000000000000000") {
-      let alpErc20Contract = new relWeb3.eth.Contract(
-        Erc20Abi as any,
-        rewardToken
-      );
-      let userRewardTokenBalance = await alpErc20Contract.methods
-        .balanceOf(address)
-        .call((err: any, result: any) => {
-          if (!err) {
-            return result;
-          } else {
-            return "--";
-          }
-        });
-      item.userRewardTokenBalance = userRewardTokenBalance;
-      let aLpContractRewardTokenBalance = await alpErc20Contract.methods
-        .balanceOf(poolInfos.aLPToken)
-        .call((err: any, result: any) => {
-          if (!err) {
-            return result;
-          } else {
-            return "--";
-          }
-        });
-      item.aLpContractRewardTokenBalance = aLpContractRewardTokenBalance;
-    }
-    let maraPerAlp = await aLpContract.methods
-      .maraPerAlp()
-      .call((err: any, result: any) => {
-        if (!err) {
-          return result;
-        } else {
-          return "--";
-        }
-      });
-    item.maraPerAlp = maraPerAlp;
-    let userRewardDebts = await aLpContract.methods
-      .userRewardDebts(address)
-      .call((err: any, result: any) => {
-        if (!err) {
-          return result;
-        } else {
-          return "--";
-        }
-      });
-    item.userRewardDebts = userRewardDebts;
-    let rewardTokenStartBlock = await aLpContract.methods
-      .rewardTokenStartBlock()
-      .call((err: any, result: any) => {
-        if (!err) {
-          return result;
-        } else {
-          return "--";
-        }
-      });
-    item.rewardTokenStartBlock = rewardTokenStartBlock;
-    let lastRewardTokenBlock = await aLpContract.methods
-      .lastRewardTokenBlock()
-      .call((err: any, result: any) => {
-        if (!err) {
-          return result;
-        } else {
-          return "--";
-        }
-      });
-    item.lastRewardTokenBlock = lastRewardTokenBlock;
-    let rewardTokenPerBlock = await aLpContract.methods
-      .rewardTokenPerBlock()
-      .call((err: any, result: any) => {
-        if (!err) {
-          return result;
-        } else {
-          return "--";
-        }
-      });
-    item.rewardTokenPerBlock = rewardTokenPerBlock;
-    //获取WalletBalance
-    let LPTokenContract = new relWeb3.eth.Contract(
-      Erc20Abi as any,
-      poolInfos.lpToken
-    );
-    let WalletBalance = await LPTokenContract.methods
-      .balanceOf(address)
-      .call((err: any, result: any) => {
-        if (!err) {
-          return result;
-        } else {
-          return "--";
-        }
-      });
-    item.WalletBalance = new BigNumber(WalletBalance)
+    item.WalletBalance = getUserInfo.userWalletBalance;
+    item.userAlpBalance = getUserInfo.userAlpBalance;
+    item.pendingReward = `${new BigNumber(getUserInfo.userPendingMara)
       .dividedBy(Math.pow(10, 18))
-      .toFixed(4);
-    //获取share
-    let resShareBalance = await aLpContract.methods
-      .balanceOf(address)
-      .call((err: any, result: any) => {
-        if (!err) {
-          return result;
-        } else {
-          return "--";
-        }
-      });
-    let shareTotal = await aLpContract.methods
-      .totalSupply()
-      .call((err: any, result: any) => {
-        if (!err) {
-          return result;
-        } else {
-          return 0;
-        }
-      });
-    // let Share =
-    //   shareTotal === "0"
-    //     ? "0.00%"
-    //     : new BigNumber(resShareBalance)
-    //         .dividedBy(new BigNumber(shareTotal))
-    //         .dividedBy(100)
-    //         .toFixed(4) + "%";
-    item.share = new BigNumber(resShareBalance)
+      .toFixed(4)} MARA + ${new BigNumber(getUserInfo.userPendingReward)
       .dividedBy(Math.pow(10, 18))
-      .toFixed(4);
-    item.totalSupply = new BigNumber(shareTotal)
-      .dividedBy(Math.pow(10, 18))
-      .toFixed(4);
-    //获取farm oracle contract
-    let priceHelperAddress = await farmBaseContract.methods
-      .priceHelperAddress()
-      .call((err: any, result: any) => {
-        if (!err) {
-          return result;
-        } else {
-          return "--";
-        }
-      });
-    //获取mara price
-    let MockPriceOracleContract = new relWeb3.eth.Contract(
-      MockPriceOracleAbi as any,
-      priceHelperAddress
-    );
-    let maraPrice = await MockPriceOracleContract.methods
-      .getAssetPrice(item.MaraAddress)
-      .call((err: any, result: any) => {
-        if (!err) {
-          return result;
-        } else {
-          return "--";
-        }
-      });
-    item.maraAssetPrice = maraPrice;
-    let rewardPrice =
-      item.rewardToken === "0x0000000000000000000000000000000000000000"
-        ? 0
-        : await MockPriceOracleContract.methods
-            .getAssetPrice(item.rewardToken)
-            .call((err: any, result: any) => {
-              if (!err) {
-                return result;
-              } else {
-                return "--";
-              }
-            });
-    item.rewardPrice = rewardPrice;
-    item.APR = new BigNumber(maraPerBlock.value)
-      // .multipliedBy(20 * 60 * 24 * 365)
-      .multipliedBy(new BigNumber(item.totalInUSD))
-      .dividedBy(new BigNumber(allTotalInUSD.value))
-      .dividedBy(Math.pow(10, 18))
-      .toFixed(4);
-    // item.FARMAPR = new BigNumber(maraPerBlock.value)
-    //   // .multipliedBy(20 * 60 * 24 * 365)
-    //   .multipliedBy(new BigNumber(item.totalInUSD))
-    //   .multipliedBy(new BigNumber(item.rewardMultiplier))
-    //   .dividedBy(new BigNumber(allTotalInUSD.value))
-    //   .dividedBy(Math.pow(10, 18))
-    //   .toFixed(4);
+      .toFixed(4)} ${item.rewardTokenSymbol}`;
+    item.userLiquidity = getUserInfo.userLiquidity;
   }
 };
 

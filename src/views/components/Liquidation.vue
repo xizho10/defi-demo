@@ -3,22 +3,73 @@
     <Button type="primary" size="large" @click="refresh" class="refresh"
       >Refresh</Button
     >
-    <Table :columns="columns" :data-source="data">
+    <Table :columns="columns" :data-source="data" :scroll="{ x: 1440 }">
       <template #bodyCell="{ column, record }">
-        <template v-if="column.keys === 'rate'">
-          {{ new BigNumber(record.rate * 100).toFixed(4) }} %
+        <template v-if="column.keys === 'deposit'">
+          <div v-for="item in record?.cloneUserTokenList" :key="item.symbol">
+            <div v-if="item.status === '1' || item.status === '3'">
+              {{ item.symbol }}
+              {{ item.depositBal }}
+            </div>
+          </div>
         </template>
-        <template
-          v-if="
-            column.keys === 'option' &&
-            record.cannotLiquidation === false &&
-            record.borrowBalance > 0
-          "
-        >
+        <template v-if="column.keys === 'asset'">
+          <div v-for="item in record?.cloneUserTokenList" :key="item.symbol">
+            <div v-if="item.status === '2' || item.status === '3'">
+              {{ item.symbol }}
+              {{ item.borrowBal }}
+            </div>
+          </div>
+        </template>
+        <template v-if="column.keys === 'walletBalance'">
+          <div v-for="item in record?.cloneUserTokenList" :key="item.symbol">
+            {{ item.symbol }}
+            {{ item.myBalance }}
+          </div>
+        </template>
+        <template v-if="column.keys === 'debtRatio'">
+          {{
+            new BigNumber(record.debtRatio).dividedBy(Math.pow(10, 2)).toFixed()
+          }}
+          %
+        </template>
+        <template v-if="column.keys === 'option'">
           <Button type="primary" size="large" @click="() => liquidate(record)"
             >Liquidate</Button
           >
         </template>
+      </template>
+      <template #expandedRowRender="{ record }">
+        <div v-for="item in record?.cloneUserTokenList" :key="item.symbol">
+          <div v-if="item.status === '1' || item.status === '2'">
+            <span style="margin: 0 10px">symbol: {{ item?.symbol }}</span>
+            <span style="margin: 0 10px">status: {{ item?.status }} </span>
+            <span style="margin: 0 10px"
+              >borrowBal: {{ item?.borrowBal }}
+            </span>
+            <span style="margin: 0 10px"
+              >borrowShares: {{ item?.borrowShares }}
+            </span>
+            <span style="margin: 0 10px"
+              >depositBal: {{ item?.depositBal }}
+            </span>
+            <span style="margin: 0 10px"
+              >maxPurchase: {{ item?.maxPurchase }}
+            </span>
+            <span style="margin: 0 10px"
+              >maxPurchaseShares: {{ item?.maxPurchaseShares }}
+            </span>
+            <span style="margin: 0 10px"
+              >myBalance: {{ item?.myBalance }}
+            </span>
+            <span style="margin: 0 10px"
+              >totalBorrowShares: {{ item?.totalBorrowShares }}
+            </span>
+            <span style="margin: 0 10px"
+              >totalBorrows: {{ item?.totalBorrows }}
+            </span>
+          </div>
+        </div>
       </template>
     </Table>
   </div>
@@ -32,35 +83,50 @@
   >
     <p>address: {{ chooseItem?.address }}</p>
     <div class="spaceSty" />
-    <p>{{ chooseItem?.coin }} contract: {{ chooseItem?.contract }}</p>
     <div class="spaceSty" />
     <p>
-      liquidatePercent:
-      <RadioGroup v-model:value="liquidatePercent">
-        <Radio value="0.1">10%</Radio>
-        <Radio value="0.2">20%</Radio>
-        <Radio value="0.3">30%</Radio>
-        <Radio value="0.4">40%</Radio>
-        <Radio value="0.5">50%</Radio>
-        <Radio value="0.6">60%</Radio>
+      liquidate pools:
+      <RadioGroup v-model:value="borrowContract" @change="liquidatePoolsChange">
+        <Radio
+          :value="item.token"
+          :key="item.token"
+          v-for="item in chooseItem.borrowCloneUserTokenList"
+          >{{ item.symbol }}: {{ item.token }}</Radio
+        >
       </RadioGroup>
     </p>
-    <p>
-      liquidateShares: {{ new BigNumber(liquidateSharesAmount).toFixed(4) }}
-    </p>
-    <p>liquidateAmount:{{ new BigNumber(liquidateAmount).toFixed(4) }}</p>
+    <div class="borrowAmountContainer">
+      <Input
+        class="amountInput"
+        placeholder="borrowAmount"
+        :value="borrowAmount"
+        @change="(e:any) => (borrowAmount = e.target.value)"
+      />
+      <p>
+        maxPurchase:
+        {{ maxPurchase }}
+      </p>
+    </div>
+    <p>borrowShares: {{ borrowShares }}</p>
     <p>
       totalBorrowShares:
-      {{
-        new BigNumber(totalBorrowShares).dividedBy(Math.pow(10, 18)).toFixed(4)
-      }}
+      {{ totalBorrowShares }}
     </p>
     <p>
       totalBorrows:
-      {{ new BigNumber(totalBorrows).dividedBy(Math.pow(10, 18)).toFixed(4) }}
+      {{ totalBorrows }}
+    </p>
+    <p>
+      <RadioGroup v-model:value="depositContract">
+        <Radio
+          :value="item.token"
+          :key="item.token"
+          v-for="item in chooseItem.depositCloneUserTokenList"
+          >{{ item.symbol }}: {{ item.token }}</Radio
+        >
+      </RadioGroup>
     </p>
     <div class="spaceSty" />
-    <p>{{ canShareCoin }} contract: {{ canShareContract }}</p>
     <div class="spaceSty" />
     <Button type="primary" size="large" @click="Approve"> Approve </Button>
     <div class="spaceSty" />
@@ -81,16 +147,17 @@ import {
   Modal,
   RadioGroup,
   Radio,
+  Input,
 } from "ant-design-vue";
 import _ from "lodash";
+import LendingInfoGetterAbi from "@/utils/LendingInfoGetter_metadata.abi.json";
 import LendingPoolAbi from "@/utils/LendingPool_metadata.abi.json";
 import DAITokenAbi from "@/utils/DaiToken_metadata.abi.json";
-import MockPriceOracleAbi from "@/utils/MockPriceOracle_metadata.abi.json";
-import Erc20Abi from "@/utils/erc20.abi.json";
 import { getContracts } from "@/utils/api";
 const store = useStore();
 
-const { lendpoolContract, oracleContract } = store.getters.getGlobalContract;
+const { LendingInfoGetterContract, lendpoolContract } =
+  store.getters.getGlobalContract;
 
 const props = defineProps<{
   relWeb3: any;
@@ -103,25 +170,34 @@ const columns = [
     dataIndex: "address",
   },
   {
-    title: "Asset",
-    dataIndex: "coin",
+    title: "Deposit",
+    keys: "deposit",
+    dataIndex: "deposit",
+  },
+  {
+    title: "Borrow",
+    keys: "asset",
+    dataIndex: "asset",
   },
   {
     title: "WalletBalance",
+    keys: "walletBalance",
     dataIndex: "walletBalance",
   },
   {
-    title: "LiquidityBalance",
-    dataIndex: "liquidityBalance",
+    title: "TotalBorrowBalanceBase",
+    keys: "totalBorrowBalanceBase",
+    dataIndex: "totalBorrowBalanceBase",
   },
   {
-    title: "BorrowBalance",
-    dataIndex: "borrowBalance",
+    title: "TotalCollateralBalanceBase",
+    keys: "totalCollateralBalanceBase",
+    dataIndex: "totalCollateralBalanceBase",
   },
   {
     title: "Debt ratio",
-    keys: "rate",
-    dataIndex: "rate",
+    keys: "debtRatio",
+    dataIndex: "debtRatio",
   },
   {
     title: "Operation",
@@ -133,164 +209,65 @@ const columns = [
 const data = ref<any>([]);
 const liquidityVisible = ref<boolean>(false);
 const chooseItem = ref<any>({});
-const canShareCoin = ref<string | number>("");
+const canShareasset = ref<string | number>("");
 const canShareContract = ref<string | number>("");
-const liquidatePercent = ref<string | number>("0.1");
+const borrowContract = ref<string | number>("");
+const depositContract = ref<string | number>("");
 const totalBorrowShares = ref<string | number>("");
 const totalBorrows = ref<string | number>("");
-const liquidateSharesAmount = ref<string | number>("");
-const liquidateAmount = ref<string | any | number>("");
+const borrowShares = ref<string | number>("");
+const borrowAmount = ref<string | any | number>("");
+const maxPurchase = ref<string | number>("");
 
 onMounted(() => {
   refresh();
 });
 
 const refresh = async () => {
-  let length = 0;
   let lengthRes = await getContracts();
   let lengthResponse = lengthRes.data.result;
+  let addressArr: any = [];
   lengthResponse?.records &&
     lengthResponse.records.map((item: any) => {
-      if (item.name === "tokenListLength") {
-        length = item.address;
+      if (item.name === "LiquidationAddress") {
+        addressArr = item.address.split(",");
       }
     });
-  let dataArr = [];
-  for (let i = 0; i < length; i++) {
-    dataArr.push(i);
-  }
+  let Contract = new props.relWeb3.eth.Contract(
+    LendingInfoGetterAbi as any,
+    LendingInfoGetterContract,
+    {
+      from: props.address,
+    }
+  );
   let deepData: any = [];
-  dataArr.map((item, index) => {
+  addressArr.map((item: any, index: number) => {
     deepData.push({
-      key: item,
+      key: index,
       index: index,
-      address: "0xEc7e5638e1b876eD6F3210Ab8A138B9EE993CAcd",
-      coin: "",
+      address: item,
+      asset: "",
       contract: "",
       abi: DAITokenAbi,
-      cannotLiquidation: true,
-      liquidityBalance: "0",
-      assetPrice: "0",
-      rate: "0",
-    });
-    deepData.push({
-      key: item,
-      index: index,
-      address: "0xA2e18718000077758fd90636D84A89f76DDA2BBd",
-      coin: "",
-      contract: "",
-      abi: DAITokenAbi,
-      cannotLiquidation: true,
-      liquidityBalance: "0",
-      assetPrice: "0",
-      rate: "0",
-    });
-    deepData.push({
-      key: item,
-      index: index,
-      address: "0x416627dA2AD387EEDCe2835B9450471dcb1A1f45",
-      coin: "",
-      contract: "",
-      abi: DAITokenAbi,
-      cannotLiquidation: true,
-      liquidityBalance: "0",
-      assetPrice: "0",
-      rate: "0",
-    });
-    deepData.push({
-      key: item,
-      index: index,
-      address: "0x96a424E5D342e1a57435080Ab0d128EaE2dBa6c6",
-      coin: "",
-      contract: "",
-      abi: DAITokenAbi,
-      cannotLiquidation: true,
-      liquidityBalance: "0",
-      assetPrice: "0",
-      rate: "0",
+      isAccountHealthy: true,
+      debtRatio: "0",
+      totalBorrowBalanceBase: "",
+      totalCollateralBalanceBase: "",
+      totalLiquidityBalanceBase: "",
+      collateralPercent: "",
+      compoundedBorrowBalance: "",
+      liquidationPercent: "",
+      maxCanBorrow: "",
+      totalAvailableLiquidity: "",
+      userTokenList: [],
+      cloneUserTokenList: [],
     });
   });
-  data.value = _.cloneDeep(deepData);
-  let Contract = new props.relWeb3.eth.Contract(
-    LendingPoolAbi as any,
-    lendpoolContract
-  );
-  for (let item of data.value) {
-    let itemContract = await Contract.methods
-      .tokenList(item.index)
-      .call((err: any, result: any) => {
-        if (!err) {
-          return result;
-        } else {
-          return "--";
-        }
-      });
-    item.contract = itemContract;
-    let Erc20Contract = new props.relWeb3.eth.Contract(
-      Erc20Abi as any,
-      itemContract
-    );
-    let name = await Erc20Contract.methods
-      .name()
-      .call((err: any, result: any) => {
-        if (!err) {
-          return result;
-        } else {
-          return "--";
-        }
-      });
-    item.coin = name;
-    let res = await Contract.methods
-      .isAccountHealthy(item.address)
-      .call((err: any, result: any) => {
-        if (!err) {
-          return result;
-        } else {
-          return "--";
-        }
-      });
-    item.cannotLiquidation = res;
-    let response = await Contract.methods
-      .getUserPoolData(item.address, item.contract)
-      .call((err: any, result: any) => {
-        if (!err) {
-          return result;
-        } else {
-          return "--";
-        }
-      });
-    item.liquidityBalance = new BigNumber(response.compoundedLiquidityBalance)
-      .dividedBy(Math.pow(10, 18))
-      .toFixed();
-    item.borrowBalance = new BigNumber(response.compoundedBorrowBalance)
-      .dividedBy(Math.pow(10, 18))
-      .toFixed();
-    //获取钱包代币余额
-    let balanceContract = new props.relWeb3.eth.Contract(
-      item.abi as any,
-      item.contract
-    );
-    let resBalance = await balanceContract.methods
-      .balanceOf(item.address)
-      .call((err: any, result: any) => {
-        if (!err) {
-          return result;
-        } else {
-          return "--";
-        }
-      });
-    let Balance = new BigNumber(resBalance)
-      .dividedBy(Math.pow(10, 18))
-      .toFixed();
-    item.walletBalance = Balance;
 
-    //获取代币价格
-    let MockPriceOracleContract = new props.relWeb3.eth.Contract(
-      MockPriceOracleAbi as any,
-      oracleContract
-    );
-    let AssetPrice = await MockPriceOracleContract.methods
-      .getAssetPrice(item.contract)
+  data.value = _.cloneDeep(deepData);
+  for (let item of data.value) {
+    let getSortAccountHealthy = await Contract.methods
+      .getSortAccountHealthy([item.address])
       .call((err: any, result: any) => {
         if (!err) {
           return result;
@@ -298,13 +275,26 @@ const refresh = async () => {
           return "--";
         }
       });
-    item.assetPrice = AssetPrice;
-    let lendingPoolContract = new props.relWeb3.eth.Contract(
-      LendingPoolAbi as any,
-      lendpoolContract
-    );
-    let userAccount = await lendingPoolContract.methods
-      .getUserAccount(item.address)
+    item.debtRatio = getSortAccountHealthy.accountHealthy[0].debtRatio;
+    item.isAccountHealthy =
+      getSortAccountHealthy.accountHealthy[0].isAccountHealthy;
+    item.totalBorrowBalanceBase = new BigNumber(
+      getSortAccountHealthy.accountHealthy[0].totalBorrowBalanceBase
+    )
+      .dividedBy(Math.pow(10, 18))
+      .toFixed();
+    item.totalCollateralBalanceBase = new BigNumber(
+      getSortAccountHealthy.accountHealthy[0].totalCollateralBalanceBase
+    )
+      .dividedBy(Math.pow(10, 18))
+      .toFixed();
+    item.totalLiquidityBalanceBase = new BigNumber(
+      getSortAccountHealthy.accountHealthy[0].totalLiquidityBalanceBase
+    )
+      .dividedBy(Math.pow(10, 18))
+      .toFixed();
+    let getLiquidationInfo = await Contract.methods
+      .getLiquidationInfo([item.address])
       .call((err: any, result: any) => {
         if (!err) {
           return result;
@@ -312,11 +302,72 @@ const refresh = async () => {
           return "--";
         }
       });
-    let rate = new BigNumber(userAccount.totalBorrowBalanceBase)
-      .dividedBy(new BigNumber(userAccount.totalCollateralBalanceBase))
-      .toFixed(4);
-    item.rate = rate;
+    item.userTokenList = getLiquidationInfo[0]?.userTokenList;
+    let cloneUserTokenList: any = [];
+    getLiquidationInfo[0]?.userTokenList.map((item: any, index: number) => {
+      cloneUserTokenList[index] = {
+        borrowBal: new BigNumber(item.borrowBal)
+          .dividedBy(Math.pow(10, 18))
+          .toFixed(4),
+        borrowShares: new BigNumber(item.borrowShares)
+          .dividedBy(Math.pow(10, 18))
+          .toFixed(4),
+        depositBal: new BigNumber(item.depositBal)
+          .dividedBy(Math.pow(10, 18))
+          .toFixed(4),
+        maxPurchase: new BigNumber(item.maxPurchase)
+          .dividedBy(Math.pow(10, 18))
+          .toFixed(4),
+        maxPurchaseShares: new BigNumber(item.maxPurchaseShares)
+          .dividedBy(Math.pow(10, 18))
+          .toFixed(4),
+        myBalance: new BigNumber(item.myBalance)
+          .dividedBy(Math.pow(10, 18))
+          .toFixed(4),
+        status: item.status,
+        symbol: item.symbol,
+        token: item.token,
+        totalBorrowShares: new BigNumber(item.totalBorrowShares)
+          .dividedBy(Math.pow(10, 18))
+          .toFixed(4),
+        totalBorrows: new BigNumber(item.totalBorrows)
+          .dividedBy(Math.pow(10, 18))
+          .toFixed(4),
+      };
+    });
+    item.cloneUserTokenList = cloneUserTokenList;
+    let borrowCloneUserTokenList: any = [];
+    let depositCloneUserTokenList: any = [];
+    cloneUserTokenList.map((item: any) => {
+      if (item.status === "2") {
+        borrowCloneUserTokenList.push(item);
+      }
+      if (item.status === "1") {
+        depositCloneUserTokenList.push(item);
+      }
+      if (item.status === "3") {
+        borrowCloneUserTokenList.push(item);
+        depositCloneUserTokenList.push(item);
+      }
+    });
+    item.borrowCloneUserTokenList = borrowCloneUserTokenList;
+    item.depositCloneUserTokenList = depositCloneUserTokenList;
   }
+};
+
+const liquidatePoolsChange = (e: any) => {
+  chooseItem.value.cloneUserTokenList.map((item: any, index: number) => {
+    if (item.token === e.target.value) {
+      borrowShares.value =
+        chooseItem.value.cloneUserTokenList[index].borrowShares;
+      totalBorrowShares.value =
+        chooseItem.value.cloneUserTokenList[index].totalBorrowShares;
+      totalBorrows.value =
+        chooseItem.value.cloneUserTokenList[index].totalBorrows;
+      maxPurchase.value =
+        chooseItem.value.cloneUserTokenList[index].maxPurchase;
+    }
+  });
 };
 
 const liquidityHandleOk = () => {
@@ -330,57 +381,16 @@ const liquidityModalHandleCancel = () => {
 const liquidate = async (item: any) => {
   liquidityVisible.value = true;
   chooseItem.value = item;
-  data.value.map(async (children: any) => {
-    if (
-      children.address === item.address &&
-      Number(children.liquidityBalance) > 0
-    ) {
-      // 只有借的金额>0的pool才可以用做清算的参数liquidateShares
-      canShareCoin.value = children.coin;
-      canShareContract.value = children.contract;
-    }
-
-    let lendingPoolContract = new props.relWeb3.eth.Contract(
-      LendingPoolAbi as any,
-      lendpoolContract
-    );
-    let pool = await lendingPoolContract.methods
-      .getPool(item.contract)
-      .call((err: any, result: any) => {
-        if (!err) {
-          return result;
-        } else {
-          return "--";
-        }
-      });
-
-    totalBorrowShares.value = pool.totalBorrowShares;
-    totalBorrows.value = pool.totalBorrows;
-    let liquidateAmountTmp = new BigNumber(liquidatePercent.value)
-      .multipliedBy(new BigNumber(chooseItem.value.borrowBalance))
-      .multipliedBy(chooseItem.value.assetPrice)
-      .dividedBy(Math.pow(10, 18));
-    liquidateAmount.value = liquidateAmountTmp;
-    liquidateSharesAmount.value = liquidateAmountTmp
-      .multipliedBy(
-        new BigNumber(pool.totalBorrowShares).dividedBy(
-          new BigNumber(pool.totalBorrows)
-        )
-      )
-      .toFixed(18);
-  });
 };
 const Approve = async () => {
   let approveContract = new props.relWeb3.eth.Contract(
     chooseItem.value.abi as any,
-    chooseItem.value.contract
+    borrowContract.value
   );
   approveContract.methods
     .approve(
-      lendpoolContract,
-      new BigNumber(liquidateAmount.value)
-        .multipliedBy(Math.pow(10, 18))
-        .toFixed()
+      depositContract.value,
+      new BigNumber(borrowAmount.value).multipliedBy(Math.pow(10, 18)).toFixed()
     )
     .send({ from: props.address }, (err: any, result: any) => {
       if (err) {
@@ -399,11 +409,11 @@ const LiquidateConfirm = async () => {
   lendingPoolContract.methods
     .liquidate(
       chooseItem.value.address,
-      chooseItem.value.contract,
-      new BigNumber(liquidateSharesAmount.value)
+      borrowContract.value,
+      new BigNumber(borrowAmount.value)
         .multipliedBy(Math.pow(10, 18))
         .toFixed(),
-      canShareContract.value
+      depositContract.value
     )
     .send(
       {
@@ -428,5 +438,9 @@ const LiquidateConfirm = async () => {
 }
 .spaceSty {
   margin-bottom: 20px;
+}
+.borrowAmountContainer {
+  display: flex;
+  flex-direction: row;
 }
 </style>

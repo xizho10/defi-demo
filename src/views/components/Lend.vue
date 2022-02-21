@@ -438,45 +438,68 @@
     />
     <div class="spaceSty" />
     <p>
-      MAXBorrow:
+      collateralPercent:
       {{
-        new BigNumber(totalCollateralBalanceBase)
-          .dividedBy(chooseItem.assetPrice)
-          .minus(
-            new BigNumber(totalBorrowBalanceBase).dividedBy(Math.pow(10, 18))
-          )
-          .toFixed(4)
-      }}
-    </p>
-    <p>Liquidity: {{ chooseItem.liquidityBalance }}</p>
-    <p>
-      Borrow Balance:
-      {{
-        new BigNumber(chooseItem.borrowBalance).multipliedBy(
-          new BigNumber(LendBorrowAmount).toFixed()
-        )
-      }}
-    </p>
-    <p>
-      Total Borrow Balance: 0 ~
-      {{
-        new BigNumber(BorrowBalance)
-          .multipliedBy(
-            new BigNumber(chooseItem?.collateralPercent).dividedBy(
-              Math.pow(10, 18)
-            )
-          )
-          .toFixed()
-      }}
-      $
-    </p>
-    <p>
-      Borrow Limit Reached:
-      {{
-        new BigNumber(chooseItem?.collateralPercent)
+        new BigNumber(chooseItem.getUserBorrowInfo?.collateralPercent)
           .dividedBy(Math.pow(10, 16))
           .toFixed()
       }}%
+    </p>
+    <p>
+      compoundedBorrowBalance:
+      {{
+        new BigNumber(chooseItem.getUserBorrowInfo?.compoundedBorrowBalance)
+          .dividedBy(Math.pow(10, 18))
+          .toFixed(4)
+      }}
+    </p>
+    <p>
+      liquidationPercent:
+      {{
+        new BigNumber(chooseItem.getUserBorrowInfo?.liquidationPercent)
+          .dividedBy(Math.pow(10, 18))
+          .toFixed(4)
+      }}
+    </p>
+    <p>
+      MAXBorrow:
+      {{
+        new BigNumber(chooseItem.getUserBorrowInfo?.maxCanBorrow)
+          .dividedBy(Math.pow(10, 18))
+          .toFixed(4)
+      }}
+    </p>
+    <p>
+      totalAvailableLiquidity:
+      {{
+        new BigNumber(chooseItem.getUserBorrowInfo?.totalAvailableLiquidity)
+          .dividedBy(Math.pow(10, 18))
+          .toFixed(4)
+      }}
+    </p>
+    <p>
+      totalBorrowBalanceBase:
+      {{
+        new BigNumber(chooseItem.getUserBorrowInfo?.totalBorrowBalanceBase)
+          .dividedBy(Math.pow(10, 18))
+          .toFixed(4)
+      }}
+    </p>
+    <p>
+      totalCollateralBalanceBase:
+      {{
+        new BigNumber(chooseItem.getUserBorrowInfo?.totalCollateralBalanceBase)
+          .dividedBy(Math.pow(10, 18))
+          .toFixed(4)
+      }}
+    </p>
+    <p>
+      totalLiquidityBalanceBase:
+      {{
+        new BigNumber(chooseItem.getUserBorrowInfo?.totalLiquidityBalanceBase)
+          .dividedBy(Math.pow(10, 18))
+          .toFixed(4)
+      }}
     </p>
     <div class="spaceSty" />
     <Button type="primary" size="large" @click="lendBorrow"> borrow </Button>
@@ -768,7 +791,6 @@ const refresh = async () => {
         return "--";
       }
     });
-  console.log("getPools", getPools);
   //获取表格数据
   let lengthRes = await getContracts();
   let lengthResponse = lengthRes.data.result;
@@ -803,6 +825,7 @@ const refresh = async () => {
       walletBalance: new BigNumber(getPools[index].balance)
         .dividedBy(Math.pow(10, 18))
         .toFixed(4),
+      getUserBorrowInfo: {},
       assetPrice: "", //token价格
       abi: Erc20Abi,
       borrowShares: "",
@@ -965,6 +988,24 @@ const refresh = async () => {
         }
       });
     item.totalBorrowInUSD = totalBorrowInUSD;
+    //获取getUserBorrowInfo
+    let lendingPoolInfoContract = new props.relWeb3.eth.Contract(
+      LendingPoolInfoGetterAbi as any,
+      LendingInfoGetterContract,
+      {
+        from: props.address,
+      }
+    );
+    let getUserBorrowInfo = await lendingPoolInfoContract.methods
+      .getUserBorrowInfo(item.contract)
+      .call((err: any, result: any) => {
+        if (!err) {
+          return result;
+        } else {
+          return "--";
+        }
+      });
+    item.getUserBorrowInfo = getUserBorrowInfo;
     let MockPriceOracleContract = new props.relWeb3.eth.Contract(
       MockPriceOracleAbi as any,
       oracleContract
@@ -1349,6 +1390,22 @@ const depositModalHandleCancel = () => {
 const openBorrowModal = async (item: any) => {
   chooseItem.value = item;
   borrowVisible.value = true;
+  let lendingPoolInfoContract = new props.relWeb3.eth.Contract(
+    LendingPoolInfoGetterAbi as any,
+    LendingInfoGetterContract,
+    {
+      from: props.address,
+    }
+  );
+  let getUserBorrowInfo = await lendingPoolInfoContract.methods
+    .getUserBorrowInfo(chooseItem.value.contract)
+    .call((err: any, result: any) => {
+      if (!err) {
+        return result;
+      } else {
+        return "--";
+      }
+    });
   let lendingPoolContract = new props.relWeb3.eth.Contract(
     LendingPoolAbi as any,
     lendpoolContract

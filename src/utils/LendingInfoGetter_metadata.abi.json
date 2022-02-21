@@ -24,32 +24,6 @@
     "type": "event"
   },
   {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": false,
-        "internalType": "address",
-        "name": "lendingPool",
-        "type": "address"
-      }
-    ],
-    "name": "SetLendingPool",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": false,
-        "internalType": "address",
-        "name": "lendingPoolInfo",
-        "type": "address"
-      }
-    ],
-    "name": "SetLendingPoolInfo",
-    "type": "event"
-  },
-  {
     "inputs": [
       {
         "internalType": "contract ERC20",
@@ -252,6 +226,261 @@
         "internalType": "uint256",
         "name": "multiplierTokenLend",
         "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "components": [
+          {
+            "internalType": "enum LendingPool.PoolStatus",
+            "name": "status",
+            "type": "uint8"
+          },
+          {
+            "internalType": "bool",
+            "name": "ableBorrow",
+            "type": "bool"
+          },
+          {
+            "internalType": "contract MaToken",
+            "name": "maToken",
+            "type": "address"
+          },
+          {
+            "internalType": "contract IPoolConfiguration",
+            "name": "poolConfig",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "totalBorrows",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "totalBorrowShares",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "poolReserves",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "lastUpdateTimestamp",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "totalMaraReward",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "totalTokenReward",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "multiplier",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "multiplierToken",
+            "type": "uint256"
+          }
+        ],
+        "internalType": "struct LendingPool.Pool",
+        "name": "pool",
+        "type": "tuple"
+      },
+      {
+        "internalType": "uint256",
+        "name": "_shareAmount",
+        "type": "uint256"
+      }
+    ],
+    "name": "calculateRoundUpBorrowAmount",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address[]",
+        "name": "users",
+        "type": "address[]"
+      }
+    ],
+    "name": "getAccountHealthy",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "uint256",
+            "name": "index",
+            "type": "uint256"
+          },
+          {
+            "internalType": "address",
+            "name": "user",
+            "type": "address"
+          },
+          {
+            "internalType": "bool",
+            "name": "isAccountHealthy",
+            "type": "bool"
+          },
+          {
+            "internalType": "uint256",
+            "name": "totalLiquidityBalanceBase",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "totalCollateralBalanceBase",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "totalBorrowBalanceBase",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "debtRatio",
+            "type": "uint256"
+          }
+        ],
+        "internalType": "struct LendingInfoGetter.AccountHealthy[]",
+        "name": "accountHealthy",
+        "type": "tuple[]"
+      },
+      {
+        "internalType": "uint256",
+        "name": "liquidationPercent",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address[]",
+        "name": "users",
+        "type": "address[]"
+      }
+    ],
+    "name": "getLiquidationInfo",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "address",
+            "name": "user",
+            "type": "address"
+          },
+          {
+            "internalType": "bool",
+            "name": "isAccountHealthy",
+            "type": "bool"
+          },
+          {
+            "internalType": "uint256",
+            "name": "totalLiquidityBalanceBase",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "totalCollateralBalanceBase",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "totalBorrowBalanceBase",
+            "type": "uint256"
+          },
+          {
+            "components": [
+              {
+                "internalType": "contract ERC20",
+                "name": "token",
+                "type": "address"
+              },
+              {
+                "internalType": "string",
+                "name": "symbol",
+                "type": "string"
+              },
+              {
+                "internalType": "uint256",
+                "name": "status",
+                "type": "uint256"
+              },
+              {
+                "internalType": "uint256",
+                "name": "depositBal",
+                "type": "uint256"
+              },
+              {
+                "internalType": "uint256",
+                "name": "borrowBal",
+                "type": "uint256"
+              },
+              {
+                "internalType": "uint256",
+                "name": "myBalance",
+                "type": "uint256"
+              },
+              {
+                "internalType": "uint256",
+                "name": "totalBorrows",
+                "type": "uint256"
+              },
+              {
+                "internalType": "uint256",
+                "name": "totalBorrowShares",
+                "type": "uint256"
+              },
+              {
+                "internalType": "uint256",
+                "name": "borrowShares",
+                "type": "uint256"
+              },
+              {
+                "internalType": "uint256",
+                "name": "maxPurchaseShares",
+                "type": "uint256"
+              },
+              {
+                "internalType": "uint256",
+                "name": "maxPurchase",
+                "type": "uint256"
+              }
+            ],
+            "internalType": "struct LendingInfoGetter.UserTokenList[]",
+            "name": "userTokenList",
+            "type": "tuple[]"
+          }
+        ],
+        "internalType": "struct LendingInfoGetter.LiquidationInfo[]",
+        "name": "liquidationInfos",
+        "type": "tuple[]"
       }
     ],
     "stateMutability": "view",
@@ -466,11 +695,176 @@
             "internalType": "uint256",
             "name": "balance",
             "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "price",
+            "type": "uint256"
+          },
+          {
+            "internalType": "contract ERC20",
+            "name": "rewardToken",
+            "type": "address"
+          },
+          {
+            "internalType": "string",
+            "name": "rewardTokenSymbol",
+            "type": "string"
+          },
+          {
+            "internalType": "uint256",
+            "name": "totalBorrowInUSD",
+            "type": "uint256"
           }
         ],
         "internalType": "struct LendingInfoGetter.PoolStruct[]",
         "name": "tokens",
         "type": "tuple[]"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address[]",
+        "name": "users",
+        "type": "address[]"
+      }
+    ],
+    "name": "getSortAccountHealthy",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "uint256",
+            "name": "index",
+            "type": "uint256"
+          },
+          {
+            "internalType": "address",
+            "name": "user",
+            "type": "address"
+          },
+          {
+            "internalType": "bool",
+            "name": "isAccountHealthy",
+            "type": "bool"
+          },
+          {
+            "internalType": "uint256",
+            "name": "totalLiquidityBalanceBase",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "totalCollateralBalanceBase",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "totalBorrowBalanceBase",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "debtRatio",
+            "type": "uint256"
+          }
+        ],
+        "internalType": "struct LendingInfoGetter.AccountHealthy[]",
+        "name": "accountHealthy",
+        "type": "tuple[]"
+      },
+      {
+        "internalType": "uint256",
+        "name": "liquidationPercent",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "getTotalInfo",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "uint256",
+            "name": "maraPerBlock",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "totalBorrowInUSD",
+            "type": "uint256"
+          }
+        ],
+        "internalType": "struct LendingInfoGetter.TotalInfo",
+        "name": "totalInfo",
+        "type": "tuple"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "contract ERC20",
+        "name": "_token",
+        "type": "address"
+      }
+    ],
+    "name": "getUserBorrowInfo",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "isAccountHealthy",
+        "type": "bool"
+      },
+      {
+        "internalType": "uint256",
+        "name": "maxCanBorrow",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "collateralPercent",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "liquidationPercent",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "totalLiquidityBalanceBase",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "totalCollateralBalanceBase",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "totalBorrowBalanceBase",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "compoundedBorrowBalance",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "totalAvailableLiquidity",
+        "type": "uint256"
       }
     ],
     "stateMutability": "view",
@@ -558,6 +952,34 @@
     "type": "function"
   },
   {
+    "inputs": [
+      {
+        "internalType": "uint256[]",
+        "name": "arr",
+        "type": "uint256[]"
+      },
+      {
+        "internalType": "uint256[]",
+        "name": "ids",
+        "type": "uint256[]"
+      },
+      {
+        "internalType": "uint256",
+        "name": "left",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "right",
+        "type": "uint256"
+      }
+    ],
+    "name": "quickSort",
+    "outputs": [],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
     "inputs": [],
     "name": "renounceOwnership",
     "outputs": [],
@@ -586,6 +1008,19 @@
       }
     ],
     "name": "setLendingPoolInfo",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "contract IPriceOracle",
+        "name": "_oracle",
+        "type": "address"
+      }
+    ],
+    "name": "setPriceOracle",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
