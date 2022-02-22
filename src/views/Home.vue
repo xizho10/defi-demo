@@ -12,6 +12,7 @@
           @change="farmOrLendOnChange"
         >
           <TabPane tab="Farm" key="1">
+            <p>{{ totalDepositInUsd }}</p>
             <Button type="primary" size="large" @click="refresh" class="refresh"
               >Refresh</Button
             >
@@ -280,13 +281,11 @@ import Records from "@/views/components/Records.vue";
 import BigNumber from "bignumber.js";
 import Erc20Abi from "@/utils/erc20.abi.json";
 import ManageAbi from "@/utils/manageAbi.abi.json";
-import InfoAbi from "@/utils/info.abi.json";
 import FarmManagerInfoGetterAbi from "@/utils/FarmManagerInfoGetter_metadata.abi.json";
 import MockPriceOracleAbi from "@/utils/MockPriceOracle_metadata.abi.json";
 import LendingPoolAbi from "@/utils/LendingPool_metadata.abi.json";
 import AlphaReleaseRuleSelectorAbi from "@/utils/AlphaReleaseRuleSelector_metadata.json";
 import FarmBase from "@/utils/farmBase.abi.json";
-import AlpAbi from "@/utils/alp.abi.json";
 import { getContracts } from "@/utils/api";
 const store = useStore();
 
@@ -380,8 +379,6 @@ const borrowDepositVisible = ref<boolean>(false);
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const relWeb3 = ref<any>("");
 const showCoinBtn = ref<boolean>(false);
-const maraPerBlock = ref<string | number>("");
-const allTotalInUSD = ref<string | number>(0);
 const amount = ref<string | number>("");
 const withdrawAmount = ref<string | number>("");
 const borrowToken = ref<string | number>("");
@@ -393,6 +390,7 @@ const lpTokenPrice = ref<any>();
 const lendingPoolCollateralPercent = ref<any>();
 const totalSupply = ref<any>();
 const borrowTokenData = ref<any>([]);
+const totalDepositInUsd = ref<any>("0");
 
 const connectClick = () => {
   if (!Web3.givenProvider) {
@@ -546,9 +544,22 @@ const getBalanceOf = async (relWeb3: Web3, address: string) => {
 
   let FarmManagerInfoGetContract = new relWeb3.eth.Contract(
     FarmManagerInfoGetterAbi as any,
-    FarmManagerInfoGetterContract.value
+    FarmManagerInfoGetterContract.value,
+    {
+      from: address,
+    }
   );
 
+  let getTotalInfo = await FarmManagerInfoGetContract.methods
+    .getTotalInfo()
+    .call((err: any, result: any) => {
+      if (!err) {
+        return result;
+      } else {
+        return "--";
+      }
+    });
+  totalDepositInUsd.value = getTotalInfo.totalDepositInUsd;
   let getPools = await FarmManagerInfoGetContract.methods
     .getPools()
     .call((err: any, result: any) => {
@@ -558,6 +569,7 @@ const getBalanceOf = async (relWeb3: Web3, address: string) => {
         return "--";
       }
     });
+  console.log("getPools", getPools);
   for (let i = 0; i < getPools.length; i++) {
     dataArr.push(i);
   }
@@ -603,6 +615,8 @@ const getBalanceOf = async (relWeb3: Web3, address: string) => {
       userLiquidity: "",
       liquidity: "",
       rewardTokenSymbol: getPools[index].rewardTokenSymbol,
+      token: getPools[index].token,
+      farmAddress: getPools[index].farmAddress,
     });
   });
   data.value = _.cloneDeep(deepData);
@@ -618,6 +632,8 @@ const getBalanceOf = async (relWeb3: Web3, address: string) => {
       });
     item.APR = `${new BigNumber(getPoolInfo.maraPerBlock)
       .dividedBy(Math.pow(10, 18))
+      .multipliedBy(new BigNumber(getPoolInfo.depositInUSD))
+      .dividedBy(totalDepositInUsd.value)
       .toFixed(4)} MARA + ${new BigNumber(getPoolInfo.tokenPerBlock)
       .dividedBy(Math.pow(10, 18))
       .toFixed(4)} ${item.rewardTokenSymbol}`;
@@ -627,6 +643,7 @@ const getBalanceOf = async (relWeb3: Web3, address: string) => {
     item.liquidity = new BigNumber(getPoolInfo.liquidity)
       .dividedBy(Math.pow(10, 18))
       .toFixed(4);
+    console.log("getPoolInfo", getPoolInfo);
     let getUserInfo = await FarmManagerInfoGetContract.methods
       .getUserInfo(item.index)
       .call((err: any, result: any) => {
@@ -636,14 +653,21 @@ const getBalanceOf = async (relWeb3: Web3, address: string) => {
           return "--";
         }
       });
-    item.WalletBalance = getUserInfo.userWalletBalance;
-    item.userAlpBalance = getUserInfo.userAlpBalance;
+    console.log("getUserInfo", getUserInfo);
+    item.WalletBalance = new BigNumber(getUserInfo.userWalletBalance)
+      .dividedBy(Math.pow(10, 18))
+      .toFixed(4);
+    item.userAlpBalance = new BigNumber(getUserInfo.userAlpBalance)
+      .dividedBy(Math.pow(10, 18))
+      .toFixed(4);
     item.pendingReward = `${new BigNumber(getUserInfo.userPendingMara)
       .dividedBy(Math.pow(10, 18))
       .toFixed(4)} MARA + ${new BigNumber(getUserInfo.userPendingReward)
       .dividedBy(Math.pow(10, 18))
       .toFixed(4)} ${item.rewardTokenSymbol}`;
-    item.userLiquidity = getUserInfo.userLiquidity;
+    item.userLiquidity = new BigNumber(getUserInfo.userLiquidity)
+      .dividedBy(Math.pow(10, 18))
+      .toFixed(4);
   }
 };
 
@@ -736,7 +760,7 @@ const claim = async (item: any) => {
 const approve = () => {
   let Contract = new relWeb3.value.eth.Contract(
     Erc20Abi as any,
-    chooseItem.value.poolInfos.lpToken,
+    chooseItem.value.token,
     {
       from: address.value,
     }
@@ -791,7 +815,7 @@ const deposit = async () => {
 const earn = async (item: any) => {
   let Contract = new relWeb3.value.eth.Contract(
     FarmBase as any,
-    item.poolInfos.farmAddress,
+    item.farmAddress,
     {
       from: address.value,
     }
@@ -844,7 +868,7 @@ const withdraw = async () => {
 const lendApprove = async () => {
   let Contract = new relWeb3.value.eth.Contract(
     Erc20Abi as any,
-    chooseItem.value.poolInfos.aLPToken,
+    chooseItem.value.token,
     {
       from: address.value,
     }
@@ -877,7 +901,7 @@ const lendDeposit = async () => {
   //deposit参数: 1.第0个币种,2.金额
   Contract.methods
     .deposit(
-      chooseItem.value.poolInfos.aLPToken,
+      chooseItem.value.token,
       new BigNumber(BorrowDepositAmount.value)
         .multipliedBy(Math.pow(10, 18))
         .toFixed()

@@ -102,6 +102,11 @@
             "internalType": "uint256",
             "name": "totalDepositInUSD",
             "type": "uint256"
+          },
+          {
+            "internalType": "address",
+            "name": "farmAddress",
+            "type": "address"
           }
         ],
         "internalType": "struct FarmManagerInfoGetter.PoolStruct[]",

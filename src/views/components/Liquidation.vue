@@ -293,6 +293,7 @@ const refresh = async () => {
     )
       .dividedBy(Math.pow(10, 18))
       .toFixed();
+    console.log("getSortAccountHealthy", getSortAccountHealthy);
     let getLiquidationInfo = await Contract.methods
       .getLiquidationInfo([item.address])
       .call((err: any, result: any) => {
