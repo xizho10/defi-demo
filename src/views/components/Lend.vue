@@ -2,36 +2,22 @@
   <div class="currencyContainer">
     <div class="currencyBottom">
       <div>
-        <h3>LendingPoolInfo:</h3>
-        <p style="margin: 0">mara: {{ mara }}</p>
-        <p style="margin: 0">lastRewardBlock: {{ lastRewardBlock }}</p>
-        <p style="margin: 0">startBlock: {{ startBlock }}</p>
-        <p style="margin: 0">
-          tokensPerBlock:
-          {{
-            new BigNumber(tokensPerBlock).dividedBy(Math.pow(10, 18)).toFixed()
-          }}
-        </p>
-      </div>
-      <div>
-        <h3>getUserAccount:</h3>
+        <h3>getTotalInfo:</h3>
         <div>
-          totalLiquidityBalanceBase:{{
-            new BigNumber(totalLiquidityBalanceBase)
+          maraPerBlock:{{
+            new BigNumber(maraPerBlock).dividedBy(Math.pow(10, 18)).toFixed(4)
+          }}
+        </div>
+        <div>
+          totalBorrowInUSD:{{
+            new BigNumber(totalBorrowInUSD)
               .dividedBy(Math.pow(10, 18))
               .toFixed(4)
           }}
         </div>
         <div>
-          totalCollateralBalanceBase:{{
-            new BigNumber(totalCollateralBalanceBase)
-              .dividedBy(Math.pow(10, 18))
-              .toFixed(4)
-          }}
-        </div>
-        <div>
-          totalBorrowBalanceBase:{{
-            new BigNumber(totalBorrowBalanceBase)
+          totalSupplyInUSD:{{
+            new BigNumber(totalSupplyInUSD)
               .dividedBy(Math.pow(10, 18))
               .toFixed(4)
           }}
@@ -608,6 +594,10 @@ const columns = [
     dataIndex: "ableBorrow",
   },
   {
+    title: "MaxBorrowInUSD",
+    dataIndex: "maxBorrowInUSD",
+  },
+  {
     title: "BorrowInterestRate",
     dataIndex: "borrowInterestRate",
   },
@@ -679,6 +669,14 @@ const columns = [
     keys: "borrowOperation",
     dataIndex: "borrowOperation",
   },
+  {
+    title: "MaToken",
+    dataIndex: "maToken",
+  },
+  {
+    title: "PoolConfig",
+    dataIndex: "poolConfig",
+  },
 ];
 
 const props = defineProps<{
@@ -710,71 +708,14 @@ const LendRepayAmount = ref<string | number>("");
 const BorrowBalance = ref<string | number>("0");
 const expandedRowRenderVisible = ref<boolean>(false);
 
+const maraPerBlock = ref<string | number>("");
+const totalBorrowInUSD = ref<string | number>("");
+const totalSupplyInUSD = ref<string | number>("");
+
 onMounted(() => {
   refresh();
 });
 const refresh = async () => {
-  //获取用户借贷基本信息
-  let lendingPoolContract = new props.relWeb3.eth.Contract(
-    LendingPoolAbi as any,
-    lendpoolContract
-  );
-  let LendingPoolInfoContract = new props.relWeb3.eth.Contract(
-    LendingPoolInfoAbi as any,
-    lendpoolinfoContract
-  );
-  let userAccount = await lendingPoolContract.methods
-    .getUserAccount(props.address)
-    .call((err: any, result: any) => {
-      if (!err) {
-        return result;
-      } else {
-        return "--";
-      }
-    });
-  totalLiquidityBalanceBase.value = userAccount.totalLiquidityBalanceBase;
-  totalCollateralBalanceBase.value = userAccount.totalCollateralBalanceBase;
-  totalBorrowBalanceBase.value = userAccount.totalBorrowBalanceBase;
-  let userMara = await LendingPoolInfoContract.methods
-    .mara()
-    .call((err: any, result: any) => {
-      if (!err) {
-        return result;
-      } else {
-        return "--";
-      }
-    });
-  mara.value = userMara;
-  let userLastRewardBlock = await LendingPoolInfoContract.methods
-    .lastRewardBlock()
-    .call((err: any, result: any) => {
-      if (!err) {
-        return result;
-      } else {
-        return "--";
-      }
-    });
-  lastRewardBlock.value = userLastRewardBlock;
-  let userStartBlock = await LendingPoolInfoContract.methods
-    .startBlock()
-    .call((err: any, result: any) => {
-      if (!err) {
-        return result;
-      } else {
-        return "--";
-      }
-    });
-  startBlock.value = userStartBlock;
-  let userTokensPerBlock = await LendingPoolInfoContract.methods
-    .tokensPerBlock()
-    .call((err: any, result: any) => {
-      if (!err) {
-        return result;
-      } else {
-        return "--";
-      }
-    });
-  tokensPerBlock.value = userTokensPerBlock;
   let LendInfoGetterContract = new props.relWeb3.eth.Contract(
     LendingPoolInfoGetterAbi as any,
     LendingInfoGetterContract,
@@ -782,6 +723,19 @@ const refresh = async () => {
       from: props.address,
     }
   );
+  let getTotalInfo = await LendInfoGetterContract.methods
+    .getTotalInfo()
+    .call((err: any, result: any) => {
+      if (!err) {
+        return result;
+      } else {
+        return "--";
+      }
+    });
+  console.log("getTotalInfo", getTotalInfo);
+  maraPerBlock.value = getTotalInfo.maraPerBlock;
+  totalBorrowInUSD.value = getTotalInfo.totalBorrowInUSD;
+  totalSupplyInUSD.value = getTotalInfo.totalSupplyInUSD;
   let getPools = await LendInfoGetterContract.methods
     .getPools()
     .call((err: any, result: any) => {
@@ -791,6 +745,7 @@ const refresh = async () => {
         return "--";
       }
     });
+  console.log("getPools", getPools);
   //获取表格数据
   let lengthRes = await getContracts();
   let lengthResponse = lengthRes.data.result;
@@ -816,7 +771,9 @@ const refresh = async () => {
       borrowBalance: "0",
       optimalUtilizationRate: "0",
       excessUtilizationRate: "",
-      maxBorrowInUSD: "",
+      maxBorrowInUSD: new BigNumber(getPools[index].maxBorrowInUSD)
+        .dividedBy(Math.pow(10, 18))
+        .toFixed(4),
       totalLiquidity: "0",
       totalAvailableLiquidity: "0",
       totalBorrowInUSD: "",
@@ -844,38 +801,14 @@ const refresh = async () => {
       compoundedLiquidityBalance: "0",
       pendingBorrowReward: "0",
       pendingLendReward: "0",
+      maToken: getPools[index].maToken,
+      poolConfig: getPools[index].poolConfig,
     });
   });
   let Contract = new props.relWeb3.eth.Contract(
     LendingPoolAbi as any,
     lendpoolContract
   );
-  let allTotalBorrowInUSD = "0";
-  for (let item of deepData) {
-    let resGetPoolBalance = await Contract.methods
-      .pools(item.contract)
-      .call((err: any, result: any) => {
-        if (!err) {
-          return result;
-        } else {
-          return "--";
-        }
-      });
-    let totalBorrowInUSD = await Contract.methods
-      .totalBorrowInUSD(item.contract)
-      .call((err: any, result: any) => {
-        if (!err) {
-          return result;
-        } else {
-          return "--";
-        }
-      });
-    if (resGetPoolBalance.status === "1") {
-      allTotalBorrowInUSD = new BigNumber(allTotalBorrowInUSD)
-        .plus(totalBorrowInUSD)
-        .toFixed();
-    }
-  }
   data.value = _.cloneDeep(deepData);
   for (let item of data.value) {
     //获取表格内容数据
@@ -888,6 +821,7 @@ const refresh = async () => {
           return "--";
         }
       });
+    console.log("getPoolInfo", getPoolInfo);
     item.active = getPoolInfo.active.toString();
     item.ableBorrow = getPoolInfo.ableBorrow.toString();
     item.borrowInterestRate = `${new BigNumber(getPoolInfo.borrowInterestRate)
@@ -926,6 +860,7 @@ const refresh = async () => {
           return "--";
         }
       });
+    console.log("getUserInfo", getUserInfo);
     item.compoundedBorrowBalance = new BigNumber(
       getUserInfo.compoundedBorrowBalance
     )
@@ -960,6 +895,7 @@ const refresh = async () => {
           return "--";
         }
       });
+    console.log("getPoolGain", getPoolGain);
     item.lendersGainPerBlock = `${new BigNumber(
       getPoolGain.lendersGainMaraPerBlock
     )
@@ -1191,16 +1127,16 @@ const refresh = async () => {
       });
     item.excessUtilizationRate = excessUtilizationRate;
     //获取MaxBorrowInUSD
-    let maxBorrowInUSD = await poolConfigContract.methods
-      .maxBorrowInUSD()
-      .call((err: any, result: any) => {
-        if (!err) {
-          return result;
-        } else {
-          return "--";
-        }
-      });
-    item.maxBorrowInUSD = maxBorrowInUSD;
+    // let maxBorrowInUSD = await poolConfigContract.methods
+    //   .maxBorrowInUSD()
+    //   .call((err: any, result: any) => {
+    //     if (!err) {
+    //       return result;
+    //     } else {
+    //       return "--";
+    //     }
+    //   });
+    // item.maxBorrowInUSD = maxBorrowInUSD;
     //获取optimalUtilizationRate
     let optimalUtilizationRate = await poolConfigContract.methods
       .getOptimalUtilizationRate()

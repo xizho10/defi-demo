@@ -431,6 +431,8 @@ const connectClick = () => {
             case "alphaReleaseRuleSelectorContract":
               alphaReleaseRuleSelectorContract.value = item.address;
               break;
+            case "FarmManagerInfoGetterContract":
+              FarmManagerInfoGetterContract.value = item.address;
           }
         });
         await store.dispatch("setGlobalContractActions", contract);
@@ -541,11 +543,6 @@ const refresh = () => {
 
 const getBalanceOf = async (relWeb3: Web3, address: string) => {
   let dataArr = [];
-
-  console.log(
-    "FarmManagerInfoGetterContract",
-    FarmManagerInfoGetterContract.value
-  );
   let FarmManagerInfoGetContract = new relWeb3.eth.Contract(
     FarmManagerInfoGetterAbi as any,
     FarmManagerInfoGetterContract.value,
@@ -553,7 +550,6 @@ const getBalanceOf = async (relWeb3: Web3, address: string) => {
       from: address,
     }
   );
-
   let getTotalInfo = await FarmManagerInfoGetContract.methods
     .getTotalInfo()
     .call((err: any, result: any) => {
@@ -573,6 +569,7 @@ const getBalanceOf = async (relWeb3: Web3, address: string) => {
         return "--";
       }
     });
+  console.log("getPools", getPools);
   for (let i = 0; i < getPools.length; i++) {
     dataArr.push(i);
   }
@@ -633,6 +630,7 @@ const getBalanceOf = async (relWeb3: Web3, address: string) => {
           return "--";
         }
       });
+    console.log("getPoolInfo", getPoolInfo);
     item.APR = `${new BigNumber(getPoolInfo.maraPerBlock)
       .dividedBy(Math.pow(10, 18))
       .multipliedBy(new BigNumber(getPoolInfo.depositInUSD))

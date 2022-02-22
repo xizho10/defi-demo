@@ -34,11 +34,7 @@
           %
         </template>
         <template
-          v-if="
-            column.keys === 'option' &&
-            record.isAccountHealthy === false &&
-            record.borrowBalance > 0
-          "
+          v-if="column.keys === 'option' && record.isAccountHealthy === false"
         >
           <Button type="primary" size="large" @click="() => liquidate(record)"
             >Liquidate</Button

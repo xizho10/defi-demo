@@ -314,7 +314,7 @@
         "type": "uint256"
       }
     ],
-    "stateMutability": "view",
+    "stateMutability": "pure",
     "type": "function"
   },
   {
@@ -715,6 +715,26 @@
             "internalType": "uint256",
             "name": "totalBorrowInUSD",
             "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "totalSupplyInUSD",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "maxBorrowInUSD",
+            "type": "uint256"
+          },
+          {
+            "internalType": "contract MaToken",
+            "name": "maToken",
+            "type": "address"
+          },
+          {
+            "internalType": "contract IPoolConfiguration",
+            "name": "poolConfig",
+            "type": "address"
           }
         ],
         "internalType": "struct LendingInfoGetter.PoolStruct[]",
@@ -801,6 +821,11 @@
             "internalType": "uint256",
             "name": "totalBorrowInUSD",
             "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "totalSupplyInUSD",
+            "type": "uint256"
           }
         ],
         "internalType": "struct LendingInfoGetter.TotalInfo",
@@ -864,6 +889,11 @@
       {
         "internalType": "uint256",
         "name": "totalAvailableLiquidity",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "maxBorrowInUSD",
         "type": "uint256"
       }
     ],
