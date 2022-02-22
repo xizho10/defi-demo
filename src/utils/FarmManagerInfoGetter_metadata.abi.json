@@ -26,6 +26,67 @@
   {
     "inputs": [
       {
+        "components": [
+          {
+            "internalType": "enum PoolStatus",
+            "name": "status",
+            "type": "uint8"
+          },
+          {
+            "internalType": "contract IERC20",
+            "name": "lpToken",
+            "type": "address"
+          },
+          {
+            "internalType": "contract AlpToken",
+            "name": "aLPToken",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "lastMaraRewardBlock",
+            "type": "uint256"
+          },
+          {
+            "internalType": "address",
+            "name": "farmAddress",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "lendingPoolAddress",
+            "type": "address"
+          }
+        ],
+        "internalType": "struct PoolInfo",
+        "name": "pool",
+        "type": "tuple"
+      },
+      {
+        "internalType": "uint256",
+        "name": "_pid",
+        "type": "uint256"
+      }
+    ],
+    "name": "getPendingRewardToken",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "maraAmount",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "rewardTokenAmount",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
         "internalType": "uint256",
         "name": "_pid",
         "type": "uint256"

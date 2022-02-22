@@ -569,7 +569,6 @@ const getBalanceOf = async (relWeb3: Web3, address: string) => {
         return "--";
       }
     });
-  console.log("getPools", getPools);
   for (let i = 0; i < getPools.length; i++) {
     dataArr.push(i);
   }
@@ -643,7 +642,6 @@ const getBalanceOf = async (relWeb3: Web3, address: string) => {
     item.liquidity = new BigNumber(getPoolInfo.liquidity)
       .dividedBy(Math.pow(10, 18))
       .toFixed(4);
-    console.log("getPoolInfo", getPoolInfo);
     let getUserInfo = await FarmManagerInfoGetContract.methods
       .getUserInfo(item.index)
       .call((err: any, result: any) => {
