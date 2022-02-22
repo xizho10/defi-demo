@@ -21,7 +21,7 @@ export default createStore({
       matokendeployerContract: "0x0Cf998cd41C07c62D269cB1c673Eb947159c5Fa7",
       lendpoolContract: "0x00d57505AAB580C4c4ee55B1d47D719618aC390A",
       FarmManagerInfoGetterContract:
-        "0x1c8A7FC02be68A0a7F1045B57f303bBCE47E1421",
+        "0xb995a63b1154A0AEbB029Fa516F4bdb3cD34cA26",
     },
   },
   getters: {

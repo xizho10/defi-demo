@@ -542,6 +542,10 @@ const refresh = () => {
 const getBalanceOf = async (relWeb3: Web3, address: string) => {
   let dataArr = [];
 
+  console.log(
+    "FarmManagerInfoGetterContract",
+    FarmManagerInfoGetterContract.value
+  );
   let FarmManagerInfoGetContract = new relWeb3.eth.Contract(
     FarmManagerInfoGetterAbi as any,
     FarmManagerInfoGetterContract.value,
