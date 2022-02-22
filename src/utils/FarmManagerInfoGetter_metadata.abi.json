@@ -168,6 +168,11 @@
             "internalType": "address",
             "name": "farmAddress",
             "type": "address"
+          },
+          {
+            "internalType": "contract AlpToken",
+            "name": "aLPToken",
+            "type": "address"
           }
         ],
         "internalType": "struct FarmManagerInfoGetter.PoolStruct[]",

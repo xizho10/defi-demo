@@ -12,7 +12,7 @@
           @change="farmOrLendOnChange"
         >
           <TabPane tab="Farm" key="1">
-            <p>{{ totalDepositInUsd }}</p>
+            <p>totalDepositInUsd: {{ totalDepositInUsd }}</p>
             <Button type="primary" size="large" @click="refresh" class="refresh"
               >Refresh</Button
             >
@@ -368,6 +368,11 @@ const columns = [
     keys: "earn",
     dataIndex: "earn",
   },
+  {
+    title: "ALPToken",
+    keys: "aLPToken",
+    dataIndex: "aLPToken",
+  },
 ];
 
 const address = ref<string>("");
@@ -617,6 +622,7 @@ const getBalanceOf = async (relWeb3: Web3, address: string) => {
       rewardTokenSymbol: getPools[index].rewardTokenSymbol,
       token: getPools[index].token,
       farmAddress: getPools[index].farmAddress,
+      aLPToken: getPools[index].aLPToken,
     });
   });
   data.value = _.cloneDeep(deepData);
