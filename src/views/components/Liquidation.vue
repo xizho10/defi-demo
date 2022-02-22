@@ -33,7 +33,13 @@
           }}
           %
         </template>
-        <template v-if="column.keys === 'option'">
+        <template
+          v-if="
+            column.keys === 'option' &&
+            record.isAccountHealthy === false &&
+            record.borrowBalance > 0
+          "
+        >
           <Button type="primary" size="large" @click="() => liquidate(record)"
             >Liquidate</Button
           >
@@ -209,8 +215,6 @@ const columns = [
 const data = ref<any>([]);
 const liquidityVisible = ref<boolean>(false);
 const chooseItem = ref<any>({});
-const canShareasset = ref<string | number>("");
-const canShareContract = ref<string | number>("");
 const borrowContract = ref<string | number>("");
 const depositContract = ref<string | number>("");
 const totalBorrowShares = ref<string | number>("");
@@ -241,19 +245,34 @@ const refresh = async () => {
     }
   );
   let deepData: any = [];
-  addressArr.map((item: any, index: number) => {
+  let getSortAccountHealthy = await Contract.methods
+    .getSortAccountHealthy(addressArr)
+    .call((err: any, result: any) => {
+      if (!err) {
+        return result;
+      } else {
+        return "--";
+      }
+    });
+  getSortAccountHealthy.accountHealthy.map((item: any, index: number) => {
     deepData.push({
       key: index,
       index: index,
-      address: item,
+      address: item.user,
       asset: "",
       contract: "",
       abi: DAITokenAbi,
-      isAccountHealthy: true,
-      debtRatio: "0",
-      totalBorrowBalanceBase: "",
-      totalCollateralBalanceBase: "",
-      totalLiquidityBalanceBase: "",
+      isAccountHealthy: item.isAccountHealthy,
+      debtRatio: item.debtRatio,
+      totalBorrowBalanceBase: new BigNumber(item.totalBorrowBalanceBase)
+        .dividedBy(Math.pow(10, 18))
+        .toFixed(),
+      totalCollateralBalanceBase: new BigNumber(item.totalCollateralBalanceBase)
+        .dividedBy(Math.pow(10, 18))
+        .toFixed(),
+      totalLiquidityBalanceBase: new BigNumber(item.totalLiquidityBalanceBase)
+        .dividedBy(Math.pow(10, 18))
+        .toFixed(),
       collateralPercent: "",
       compoundedBorrowBalance: "",
       liquidationPercent: "",
@@ -263,37 +282,8 @@ const refresh = async () => {
       cloneUserTokenList: [],
     });
   });
-
   data.value = _.cloneDeep(deepData);
   for (let item of data.value) {
-    let getSortAccountHealthy = await Contract.methods
-      .getSortAccountHealthy([item.address])
-      .call((err: any, result: any) => {
-        if (!err) {
-          return result;
-        } else {
-          return "--";
-        }
-      });
-    item.debtRatio = getSortAccountHealthy.accountHealthy[0].debtRatio;
-    item.isAccountHealthy =
-      getSortAccountHealthy.accountHealthy[0].isAccountHealthy;
-    item.totalBorrowBalanceBase = new BigNumber(
-      getSortAccountHealthy.accountHealthy[0].totalBorrowBalanceBase
-    )
-      .dividedBy(Math.pow(10, 18))
-      .toFixed();
-    item.totalCollateralBalanceBase = new BigNumber(
-      getSortAccountHealthy.accountHealthy[0].totalCollateralBalanceBase
-    )
-      .dividedBy(Math.pow(10, 18))
-      .toFixed();
-    item.totalLiquidityBalanceBase = new BigNumber(
-      getSortAccountHealthy.accountHealthy[0].totalLiquidityBalanceBase
-    )
-      .dividedBy(Math.pow(10, 18))
-      .toFixed();
-    console.log("getSortAccountHealthy", getSortAccountHealthy);
     let getLiquidationInfo = await Contract.methods
       .getLiquidationInfo([item.address])
       .call((err: any, result: any) => {
