@@ -11,14 +11,14 @@
         <div>
           totalBorrowInUSD:{{
             new BigNumber(totalBorrowInUSD)
-              .dividedBy(Math.pow(10, 18))
+              .dividedBy(Math.pow(10, 36))
               .toFixed(4)
           }}
         </div>
         <div>
           totalSupplyInUSD:{{
             new BigNumber(totalSupplyInUSD)
-              .dividedBy(Math.pow(10, 18))
+              .dividedBy(Math.pow(10, 36))
               .toFixed(4)
           }}
         </div>
